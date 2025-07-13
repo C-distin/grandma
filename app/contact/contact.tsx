@@ -9,8 +9,6 @@ import {
   FaMapLocationDot,
   FaPhone,
   FaRegPaperPlane,
-  FaM,
-  FaB,
 } from "react-icons/fa6"
 import { motion } from "motion/react"
 import { useState } from "react"
@@ -164,7 +162,7 @@ export function ContactPage() {
                   <span className="text-slate-700">Speaking Engagements</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FaB
+                  <FaBookOpen
                     className="text-purple-600"
                     size={18}
                   />
