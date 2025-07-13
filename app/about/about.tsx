@@ -18,7 +18,7 @@ export function AboutPage() {
           <h1 className="text-5xl font-bold mb-6">Margaret E. Kuofie</h1>
           <p className="text-xl mb-8">Author | Clinical Research Professional | Storyteller</p>
           <motion.a
-            href="#contact"
+            href="/contact"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-white text-indigo-700 px-8 py-3 rounded-lg font-semibold inline-flex items-center gap-2"
