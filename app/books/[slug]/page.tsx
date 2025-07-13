@@ -1,13 +1,10 @@
 "use client"
 
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { FaBookOpen } from "react-icons/fa6"
 import Image from "next/image"
 import { notFound } from "next/navigation"
-import { useEffect, useId, useState } from "react"
-import { useForm } from "react-hook-form"
-import { type ContactFormValues, contactSchema } from "./schema"
 
 const books = {
   "to-vow-or-not-to-vow": {
@@ -33,10 +30,6 @@ interface PageProps {
 }
 
 export default function Page({ params }: PageProps) {
-  const nameId = useId()
-  const emailId = useId()
-  const messageId = useId()
-
   const [slug, setSlug] = useState<string | null>(null)
   const [book, setBook] = useState<(typeof books)[keyof typeof books] | null>(null)
 
@@ -61,18 +54,6 @@ export default function Page({ params }: PageProps) {
 
     resolveParams()
   }, [params])
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ContactFormValues>({
-    resolver: zodResolver(contactSchema),
-  })
-
-  const onSubmit = (data: ContactFormValues) => {
-    console.log("Form submitted:", data)
-  }
 
   // Show loading state while resolving params
   if (!slug || !book) {
@@ -126,70 +107,6 @@ export default function Page({ params }: PageProps) {
               </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Contact Form */}
-      <section className="py-16 px-6 bg-gray-50">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Ask a Question</h2>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-6"
-          >
-            <div>
-              <label
-                htmlFor={nameId}
-                className="block text-gray-900 mb-2"
-              >
-                Name
-              </label>
-              <input
-                {...register("name")}
-                id={nameId}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-            </div>
-            <div>
-              <label
-                htmlFor={emailId}
-                className="block text-gray-900 mb-2"
-              >
-                Email
-              </label>
-              <input
-                {...register("email")}
-                id={emailId}
-                type="email"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-            </div>
-            <div>
-              <label
-                htmlFor={messageId}
-                className="block text-gray-900 mb-2"
-              >
-                Message
-              </label>
-              <textarea
-                {...register("message")}
-                id={messageId}
-                rows={4}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              ></textarea>
-              {errors.message && <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>}
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold"
-            >
-              Send Message
-            </motion.button>
-          </form>
         </div>
       </section>
     </div>

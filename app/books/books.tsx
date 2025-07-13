@@ -56,8 +56,6 @@ export function BooksPage() {
                   alt={book.title}
                   width={32}
                   height={48}
-                  layout="responsive"
-                  quality={100}
                   className="w-32 h-48 object-cover rounded-md"
                 />
                 <div>
