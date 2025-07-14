@@ -1,54 +1,48 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import { 
-  FaList, 
-  FaPlus, 
-  FaChartLine, 
-  FaCog,
-  FaArrowLeft
-} from 'react-icons/fa6'
-import { PostList } from '@/components/dashboard/PostList'
-import { CreatePost } from '@/components/dashboard/CreatePost'
-import { BlogPost, CreatePostData } from '@/types/blog'
-import { createBlogPost, updateBlogPost } from '@/lib/actions/blog'
-import { toast } from 'sonner'
+import { useState } from "react"
+import { motion } from "motion/react"
+import { FaList, FaPlus, FaChartLine, FaGears, FaArrowLeft } from "react-icons/fa6"
+import { PostList } from "@/components/dashboard/PostList"
+import { CreatePost } from "@/components/dashboard/CreatePost"
+import type { BlogPost, CreatePostData } from "@/types/blog"
+import { createBlogPost, updateBlogPost } from "@/lib/actions/blog"
+import { toast } from "sonner"
 
-type TabType = 'list' | 'create' | 'analytics' | 'settings'
+type TabType = "list" | "create" | "analytics" | "settings"
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('list')
+  const [activeTab, setActiveTab] = useState<TabType>("list")
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
 
   const tabs = [
-    { id: 'list' as TabType, name: 'All Posts', icon: FaList },
-    { id: 'create' as TabType, name: 'Create Post', icon: FaPlus },
-    { id: 'analytics' as TabType, name: 'Analytics', icon: FaChartLine },
-    { id: 'settings' as TabType, name: 'Settings', icon: FaCog },
+    { id: "list" as TabType, name: "All Posts", icon: FaList },
+    { id: "create" as TabType, name: "Create Post", icon: FaPlus },
+    { id: "analytics" as TabType, name: "Analytics", icon: FaChartLine },
+    { id: "settings" as TabType, name: "Settings", icon: FaGears },
   ]
 
   const handleCreatePost = () => {
     setEditingPost(null)
-    setActiveTab('create')
+    setActiveTab("create")
   }
 
   const handleEditPost = (post: BlogPost) => {
     setEditingPost(post)
-    setActiveTab('create')
+    setActiveTab("create")
   }
 
   const handleSavePost = async (data: CreatePostData) => {
     try {
       const formData = new FormData()
-      formData.append('title', data.title)
-      formData.append('excerpt', data.excerpt)
-      formData.append('content', data.content)
-      formData.append('category', data.category)
-      formData.append('tags', JSON.stringify(data.tags))
-      formData.append('status', data.status)
+      formData.append("title", data.title)
+      formData.append("excerpt", data.excerpt)
+      formData.append("content", data.content)
+      formData.append("category", data.category)
+      formData.append("tags", JSON.stringify(data.tags))
+      formData.append("status", data.status)
       if (data.featuredImage) {
-        formData.append('featuredImage', data.featuredImage)
+        formData.append("featuredImage", data.featuredImage)
       }
 
       let result
@@ -59,58 +53,60 @@ export default function DashboardPage() {
       }
 
       if (result.success) {
-        toast.success(editingPost ? 'Post updated successfully!' : 'Post created successfully!')
-        setActiveTab('list')
+        toast.success(editingPost ? "Post updated successfully!" : "Post created successfully!")
+        setActiveTab("list")
         setEditingPost(null)
       } else {
-        toast.error(result.error || 'Failed to save post')
+        toast.error(result.error || "Failed to save post")
       }
     } catch (error) {
-      console.error('Error saving post:', error)
-      toast.error('An unexpected error occurred')
+      console.error("Error saving post:", error)
+      toast.error("An unexpected error occurred")
     }
   }
 
   const handleCancelEdit = () => {
-    setActiveTab('list')
+    setActiveTab("list")
     setEditingPost(null)
   }
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'list':
+      case "list":
         return (
-          <PostList 
+          <PostList
             onCreateNew={handleCreatePost}
             onEditPost={handleEditPost}
           />
         )
-      case 'create':
+      case "create":
         return (
-          <CreatePost 
+          <CreatePost
             editingPost={editingPost}
             onSave={handleSavePost}
             onCancel={handleCancelEdit}
           />
         )
-      case 'analytics':
+      case "analytics":
         return (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
-            <FaChartLine className="mx-auto text-gray-400 mb-4" size={48} />
+            <FaChartLine
+              className="mx-auto text-gray-400 mb-4"
+              size={48}
+            />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Coming Soon</h3>
-            <p className="text-gray-600">
-              Track your blog performance, reader engagement, and post analytics.
-            </p>
+            <p className="text-gray-600">Track your blog performance, reader engagement, and post analytics.</p>
           </div>
         )
-      case 'settings':
+      case "settings":
         return (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
-            <FaCog className="mx-auto text-gray-400 mb-4" size={48} />
+            <FaGears
+              className="mx-auto text-gray-400 mb-4"
+              size={48}
+            />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Settings Coming Soon</h3>
-            <p className="text-gray-600">
-              Configure your blog settings, categories, and preferences.
-            </p>
+            <p className="text-gray-600">Configure your blog settings, categories, and preferences.</p>
           </div>
         )
       default:
@@ -136,16 +132,14 @@ export default function DashboardPage() {
             <div className="h-6 w-px bg-gray-300" />
             <h1 className="text-3xl font-bold text-gray-900">Blog Dashboard</h1>
           </div>
-          <p className="text-gray-600">
-            Manage your blog posts, create new content, and track performance.
-          </p>
+          <p className="text-gray-600">Manage your blog posts, create new content, and track performance.</p>
         </div>
 
         {/* Navigation Tabs */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              {tabs.map((tab) => {
+              {tabs.map(tab => {
                 const isActive = activeTab === tab.id
                 return (
                   <motion.button
@@ -153,8 +147,8 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       isActive
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                     whileHover={{ y: -1 }}
                     whileTap={{ y: 0 }}
@@ -181,3 +175,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

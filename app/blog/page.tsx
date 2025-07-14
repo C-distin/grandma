@@ -1,35 +1,26 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { 
-  FaCalendar, 
-  FaClock, 
-  FaEye, 
-  FaHeart, 
-  FaArrowRight,
-  FaSearch,
-  FaFilter
-} from 'react-icons/fa6'
-import { getBlogPosts, getBlogCategories } from '@/lib/actions/blog'
-import { BlogPost, BlogCategory } from '@/types/blog'
-import { useState as useStateHook } from 'react'
+import { useEffect, useState } from "react"
+import { motion } from "motion/react"
+import Image from "next/image"
+import Link from "next/link"
+import { FaCalendar, FaClock, FaEye, FaHeart, FaArrowRight, FaMagnifyingGlass, FaFilter } from "react-icons/fa6"
+import { getBlogPosts, getBlogCategories } from "@/lib/actions/blog"
+import type { BlogPost, BlogCategory } from "@/types/blog"
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [postsResult, categoriesResult] = await Promise.all([
-          getBlogPosts({ status: 'published' }),
-          getBlogCategories()
+          getBlogPosts({ status: "published" }),
+          getBlogCategories(),
         ])
 
         if (postsResult.success) {
@@ -40,7 +31,7 @@ export default function BlogPage() {
           setCategories(categoriesResult.categories)
         }
       } catch (error) {
-        console.error('Error fetching blog data:', error)
+        console.error("Error fetching blog data:", error)
       } finally {
         setLoading(false)
       }
@@ -50,12 +41,13 @@ export default function BlogPage() {
   }, [])
 
   const filteredPosts = posts.filter(post => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     const matchesCategory = !selectedCategory || post.category === selectedCategory
-    
+
     return matchesSearch && matchesCategory
   })
 
@@ -63,11 +55,11 @@ export default function BlogPage() {
   const otherPosts = filteredPosts.slice(1)
 
   const formatDate = (date: Date | string) => {
-    const d = typeof date === 'string' ? new Date(date) : date
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    const d = typeof date === "string" ? new Date(date) : date
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     })
   }
 
@@ -93,9 +85,7 @@ export default function BlogPage() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Blog</h1>
-          <p className="text-xl mb-8 text-blue-100">
-            Insights, stories, and thoughts on writing, research, and life
-          </p>
+          <p className="text-xl mb-8 text-blue-100">Insights, stories, and thoughts on writing, research, and life</p>
         </div>
       </motion.section>
 
@@ -106,12 +96,15 @@ export default function BlogPage() {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <FaMagnifyingGlass
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={16}
+                  />
                   <input
                     type="text"
                     placeholder="Search posts..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={e => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -119,12 +112,15 @@ export default function BlogPage() {
               <div className="md:w-64">
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={e => setSelectedCategory(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">All Categories</option>
                   {categories.map(category => (
-                    <option key={category.id} value={category.name}>
+                    <option
+                      key={category.id}
+                      value={category.name}
+                    >
                       {category.name}
                     </option>
                   ))}
@@ -170,15 +166,11 @@ export default function BlogPage() {
                           {featuredPost.category}
                         </span>
                       </div>
-                      
-                      <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                        {featuredPost.title}
-                      </h2>
-                      
-                      <p className="text-gray-600 mb-4 line-clamp-3">
-                        {featuredPost.excerpt}
-                      </p>
-                      
+
+                      <h2 className="text-2xl font-bold text-gray-900 mb-3">{featuredPost.title}</h2>
+
+                      <p className="text-gray-600 mb-4 line-clamp-3">{featuredPost.excerpt}</p>
+
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
                         <span className="flex items-center gap-1">
                           <FaCalendar size={12} />
@@ -193,7 +185,7 @@ export default function BlogPage() {
                           {featuredPost.views.toLocaleString()}
                         </span>
                       </div>
-                      
+
                       <Link href={`/blog/${featuredPost.slug}`}>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
@@ -230,28 +222,24 @@ export default function BlogPage() {
                         className="w-full h-48 object-cover"
                       />
                     )}
-                    
+
                     <div className="p-6">
                       <div className="flex items-center gap-2 mb-3">
-                        <span 
+                        <span
                           className="px-2 py-1 text-xs font-medium rounded-full"
-                          style={{ 
-                            backgroundColor: categories.find(c => c.name === post.category)?.color + '20',
-                            color: categories.find(c => c.name === post.category)?.color
+                          style={{
+                            backgroundColor: categories.find(c => c.name === post.category)?.color + "20",
+                            color: categories.find(c => c.name === post.category)?.color,
                           }}
                         >
                           {post.category}
                         </span>
                       </div>
-                      
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                        {post.title}
-                      </h3>
-                      
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-                      
+
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
                         <span className="flex items-center gap-1">
                           <FaCalendar size={10} />
@@ -266,7 +254,7 @@ export default function BlogPage() {
                           {post.views}
                         </span>
                       </div>
-                      
+
                       <Link href={`/blog/${post.slug}`}>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
@@ -288,3 +276,4 @@ export default function BlogPage() {
     </div>
   )
 }
+

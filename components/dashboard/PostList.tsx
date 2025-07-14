@@ -1,25 +1,25 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { 
-  FaEye, 
-  FaHeart, 
-  FaClock, 
-  FaEdit, 
-  FaTrash, 
-  FaSearch,
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "motion/react"
+import Image from "next/image"
+import Link from "next/link"
+import {
+  FaEye,
+  FaHeart,
+  FaClock,
+  FaPenToSquare,
+  FaTrash,
+  FaMagnifyingGlass,
   FaFilter,
   FaSort,
   FaPlus,
-  FaCalendar
-} from 'react-icons/fa6'
-import { BlogPost, PostFilters } from '@/types/blog'
-import { getBlogPosts, getBlogCategories, deleteBlogPost } from '@/lib/actions/blog'
-import { BlogCategory } from '@/types/blog'
-import { toast } from 'sonner'
+  FaCalendar,
+} from "react-icons/fa6"
+import { BlogPost, PostFilters } from "@/types/blog"
+import { getBlogPosts, getBlogCategories, deleteBlogPost } from "@/lib/actions/blog"
+import { BlogCategory } from "@/types/blog"
+import { toast } from "sonner"
 
 interface PostListProps {
   onCreateNew: () => void
@@ -31,20 +31,17 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<PostFilters>({
-    status: 'all',
-    sortBy: 'newest'
+    status: "all",
+    sortBy: "newest",
   })
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState("")
   const [showFilters, setShowFilters] = useState(false)
 
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [postsResult, categoriesResult] = await Promise.all([
-          getBlogPosts(),
-          getBlogCategories()
-        ])
+        const [postsResult, categoriesResult] = await Promise.all([getBlogPosts(), getBlogCategories()])
 
         if (postsResult.success) {
           setPosts(postsResult.posts)
@@ -54,8 +51,8 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
           setCategories(categoriesResult.categories)
         }
       } catch (error) {
-        console.error('Error loading data:', error)
-        toast.error('Failed to load blog data')
+        console.error("Error loading data:", error)
+        toast.error("Failed to load blog data")
       } finally {
         setLoading(false)
       }
@@ -66,19 +63,23 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
 
   const filteredPosts = posts
     .filter(post => {
-      if (filters.status !== 'all' && post.status !== filters.status) return false
+      if (filters.status !== "all" && post.status !== filters.status) return false
       if (filters.category && post.category !== filters.category) return false
-      if (searchTerm && !post.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())) return false
+      if (
+        searchTerm &&
+        !post.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+        return false
       return true
     })
     .sort((a, b) => {
       switch (filters.sortBy) {
-        case 'oldest':
+        case "oldest":
           return a.createdAt.getTime() - b.createdAt.getTime()
-        case 'title':
+        case "title":
           return a.title.localeCompare(b.title)
-        case 'views':
+        case "views":
           return b.views - a.views
         default: // newest
           return b.createdAt.getTime() - a.createdAt.getTime()
@@ -86,7 +87,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
     })
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post?')) {
+    if (!confirm("Are you sure you want to delete this post?")) {
       return
     }
 
@@ -94,39 +95,43 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
       const result = await deleteBlogPost(postId)
       if (result.success) {
         setPosts(posts.filter(post => post.id !== postId))
-        toast.success('Post deleted successfully')
+        toast.success("Post deleted successfully")
       } else {
-        toast.error(result.error || 'Failed to delete post')
+        toast.error(result.error || "Failed to delete post")
       }
     } catch (error) {
-      console.error('Error deleting post:', error)
-      toast.error('An unexpected error occurred')
+      console.error("Error deleting post:", error)
+      toast.error("An unexpected error occurred")
     }
   }
 
   const formatDate = (date: Date | string) => {
-    const d = typeof date === 'string' ? new Date(date) : date
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    const d = typeof date === "string" ? new Date(date) : date
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     })
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800'
-      case 'draft': return 'bg-yellow-100 text-yellow-800'
-      case 'archived': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case "published":
+        return "bg-green-100 text-green-800"
+      case "draft":
+        return "bg-yellow-100 text-yellow-800"
+      case "archived":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
   }
 
   const stats = {
     total: posts.length,
-    published: posts.filter(p => p.status === 'published').length,
-    drafts: posts.filter(p => p.status === 'draft').length,
-    totalViews: posts.reduce((sum, p) => sum + p.views, 0)
+    published: posts.filter(p => p.status === "published").length,
+    drafts: posts.filter(p => p.status === "draft").length,
+    totalViews: posts.reduce((sum, p) => sum + p.views, 0),
   }
 
   if (loading) {
@@ -150,7 +155,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <p className="text-sm text-gray-600">Total Posts</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
-            <FaEdit className="text-blue-500" size={24} />
+            <FaPenToSquare
+              className="text-blue-500"
+              size={24}
+            />
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -159,7 +167,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <p className="text-sm text-gray-600">Published</p>
               <p className="text-2xl font-bold text-green-600">{stats.published}</p>
             </div>
-            <FaCalendar className="text-green-500" size={24} />
+            <FaCalendar
+              className="text-green-500"
+              size={24}
+            />
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -168,7 +179,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <p className="text-sm text-gray-600">Drafts</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.drafts}</p>
             </div>
-            <FaClock className="text-yellow-500" size={24} />
+            <FaClock
+              className="text-yellow-500"
+              size={24}
+            />
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -177,7 +191,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <p className="text-sm text-gray-600">Total Views</p>
               <p className="text-2xl font-bold text-purple-600">{stats.totalViews.toLocaleString()}</p>
             </div>
-            <FaEye className="text-purple-500" size={24} />
+            <FaEye
+              className="text-purple-500"
+              size={24}
+            />
           </div>
         </div>
       </div>
@@ -187,26 +204,30 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex-1 max-w-md">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <FaMagnifyingGlass
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search posts..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <FaFilter size={16} />
               Filters
             </button>
-            
+
             <motion.button
               onClick={onCreateNew}
               whileHover={{ scale: 1.02 }}
@@ -224,7 +245,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
           {showFilters && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="mt-4 pt-4 border-t border-gray-200"
             >
@@ -233,7 +254,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <select
                     value={filters.status}
-                    onChange={(e) => setFilters({...filters, status: e.target.value as any})}
+                    onChange={e => setFilters({ ...filters, status: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Status</option>
@@ -242,26 +263,31 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
-                    value={filters.category || ''}
-                    onChange={(e) => setFilters({...filters, category: e.target.value || undefined})}
+                    value={filters.category || ""}
+                    onChange={e => setFilters({ ...filters, category: e.target.value || undefined })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">All Categories</option>
                     {categories.map(category => (
-                      <option key={category.id} value={category.name}>{category.name}</option>
+                      <option
+                        key={category.id}
+                        value={category.name}
+                      >
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
                   <select
                     value={filters.sortBy}
-                    onChange={(e) => setFilters({...filters, sortBy: e.target.value as any})}
+                    onChange={e => setFilters({ ...filters, sortBy: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="newest">Newest First</option>
@@ -280,15 +306,18 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
-            <FaEdit className="mx-auto text-gray-400 mb-4" size={48} />
+            <FaPenToSquare
+              className="mx-auto text-gray-400 mb-4"
+              size={48}
+            />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm || filters.status !== 'all' || filters.category 
-                ? 'Try adjusting your filters or search terms.'
-                : 'Get started by creating your first blog post.'
-              }
+              {searchTerm || filters.status !== "all" || filters.category
+                ? "Try adjusting your filters or search terms."
+                : "Get started by creating your first blog post."}
             </p>
             <button
+              type="button"
               onClick={onCreateNew}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
@@ -317,26 +346,22 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                     />
                   </div>
                 )}
-                
+
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                        {post.excerpt}
-                      </p>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">{post.title}</h3>
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{post.excerpt}</p>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 ml-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(post.status)}`}>
                         {post.status}
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Meta Information */}
                   <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                     <span className="flex items-center gap-1">
@@ -356,7 +381,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                       {post.likes}
                     </span>
                   </div>
-                  
+
                   {/* Tags */}
                   <div className="flex items-center gap-2 mb-3">
                     {post.tags.slice(0, 3).map(tag => (
@@ -368,19 +393,18 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                       </span>
                     ))}
                     {post.tags.length > 3 && (
-                      <span className="text-xs text-gray-500">
-                        +{post.tags.length - 3} more
-                      </span>
+                      <span className="text-xs text-gray-500">+{post.tags.length - 3} more</span>
                     )}
                   </div>
-                  
+
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       onClick={() => onEditPost(post)}
                       className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <FaEdit size={12} />
+                      <FaPenToSquare size={12} />
                       Edit
                     </button>
                     <Link
@@ -391,6 +415,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                       View
                     </Link>
                     <button
+                      type="button"
                       onClick={() => handleDeletePost(post.id)}
                       className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
                     >
@@ -407,3 +432,4 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
     </div>
   )
 }
+

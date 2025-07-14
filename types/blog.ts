@@ -1,4 +1,4 @@
-import { type BlogPost as DBBlogPost, type BlogCategory as DBBlogCategory } from "@/lib/db/schema"
+import type { BlogCategory as DBBlogCategory, BlogPost as DBBlogPost } from "@/lib/db/schema"
 
 export type BlogPost = DBBlogPost
 export type BlogCategory = DBBlogCategory
