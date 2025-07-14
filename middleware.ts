@@ -17,5 +17,5 @@ export default createMiddleware({
 
 export const config = {
   // Match only internationalized pathnames
-  matcher: ['/', '/(ar|de|en|es|fr|zh)/:path*']
+  matcher: ['/', '/(ar|en|es|fr|zh)/:path*']
 }

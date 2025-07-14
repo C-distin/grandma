@@ -42,15 +42,15 @@ export default function HomePage() {
   const books = [
     {
       slug: "to-vow-or-not-to-vow",
-      title: "To Vow or Not to Vow",
+      title: locale === 'fr' ? "Faire un Vœu ou Ne Pas Faire de Vœu" : "To Vow or Not to Vow",
       cover: "/books/vow-cover.jpg",
-      description: "A cultural exploration of marriage vows and modern relationships.",
+      description: locale === 'fr' ? "Une exploration culturelle des vœux de mariage et des relations modernes." : "A cultural exploration of marriage vows and modern relationships.",
     },
     {
       slug: "behind-closed-doors",
-      title: "Behind Closed Doors: Guarding Your Dreams",
+      title: locale === 'fr' ? "Derrière les Portes Fermées : Protéger Vos Rêves" : "Behind Closed Doors: Guarding Your Dreams",
       cover: "/books/guarding-dreams.jpg",
-      description: "A guide to nurturing unspoken aspirations and overcoming self-doubt.",
+      description: locale === 'fr' ? "Un guide pour nourrir les aspirations non exprimées et surmonter le doute de soi." : "A guide to nurturing unspoken aspirations and overcoming self-doubt.",
     },
   ]
 

@@ -50,6 +50,7 @@ This guide provides a comprehensive approach to implementing internationalizatio
 
 ### LocaleSwitcher
 - Dropdown interface for language selection
+- Support for 5 languages including French
 - Smooth transitions with Framer Motion
 - Persistent locale preference
 
