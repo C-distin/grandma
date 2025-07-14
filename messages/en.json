@@ -1,0 +1,82 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "books": "Books",
+    "stories": "Stories",
+    "gallery": "Gallery",
+    "speaking": "Speaking",
+    "contact": "Contact"
+  },
+  "home": {
+    "title": "Margaret E. Kuofie",
+    "subtitle": "Author | Clinical Research Professional | Storyteller",
+    "description": "Crafting stories that bridge science and humanity, exploring themes of identity, resilience, and cultural duality through compelling narratives.",
+    "exploreBooks": "Explore My Books",
+    "bookSpeaking": "Book Speaking",
+    "featuredBooks": "Featured Books",
+    "aboutTitle": "About Margaret",
+    "aboutDescription": "Margaret E. Kuofie is a certified clinical research professional with over a decade of experience in healthcare. Her writing blends scientific rigor with emotional depth, exploring themes of identity, resilience, and cultural duality.",
+    "learnMore": "Learn More About Me",
+    "stayConnected": "Stay Connected",
+    "newsletterDescription": "Get updates on new releases, upcoming events, and exclusive content delivered straight to your inbox.",
+    "subscribe": "Subscribe"
+  },
+  "books": {
+    "title": "Books by Margaret Kuofie",
+    "subtitle": "Explore stories that blend clinical insight, cultural reflection, and personal growth.",
+    "featuredBooks": "Featured Books",
+    "learnMore": "Learn More",
+    "buyNow": "Buy Now"
+  },
+  "contact": {
+    "title": "Get In Touch",
+    "subtitle": "I'd love to hear from you. Whether you have a question about my work, want to collaborate, or just want to say hello, don't hesitate to reach out.",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "inquiryType": "Inquiry Type",
+    "inquiryTypes": {
+      "general": "General Inquiry",
+      "collaboration": "Collaboration",
+      "speaking": "Speaking Engagement",
+      "media": "Media Inquiry"
+    },
+    "sendMessage": "Send Message",
+    "sending": "Sending...",
+    "successMessage": "Thank you for your message! I'll get back to you soon.",
+    "responseTime": "I typically respond to messages within 24-48 hours. For urgent inquiries, please call or send an email directly."
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "minLength": "Must be at least {min} characters",
+    "maxLength": "Must be no more than {max} characters"
+  },
+  "dates": {
+    "published": "Published {date}",
+    "updated": "Updated {date}",
+    "eventDate": "Event on {date}"
+  },
+  "numbers": {
+    "booksCount": "{count, plural, =0 {No books} =1 {1 book} other {# books}}",
+    "readersCount": "{count, number} readers inspired",
+    "yearsExperience": "{count}+ years experience"
+  }
+}

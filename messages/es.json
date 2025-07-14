@@ -1,0 +1,82 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "books": "Libros",
+    "stories": "Historias",
+    "gallery": "Galería",
+    "speaking": "Conferencias",
+    "contact": "Contacto"
+  },
+  "home": {
+    "title": "Margaret E. Kuofie",
+    "subtitle": "Autora | Profesional de Investigación Clínica | Narradora",
+    "description": "Creando historias que conectan la ciencia y la humanidad, explorando temas de identidad, resistencia y dualidad cultural a través de narrativas convincentes.",
+    "exploreBooks": "Explorar Mis Libros",
+    "bookSpeaking": "Reservar Conferencia",
+    "featuredBooks": "Libros Destacados",
+    "aboutTitle": "Acerca de Margaret",
+    "aboutDescription": "Margaret E. Kuofie es una profesional certificada en investigación clínica con más de una década de experiencia en atención médica. Su escritura combina rigor científico con profundidad emocional.",
+    "learnMore": "Conocer Más Sobre Mí",
+    "stayConnected": "Mantente Conectado",
+    "newsletterDescription": "Recibe actualizaciones sobre nuevos lanzamientos, eventos próximos y contenido exclusivo directamente en tu bandeja de entrada.",
+    "subscribe": "Suscribirse"
+  },
+  "books": {
+    "title": "Libros de Margaret Kuofie",
+    "subtitle": "Explora historias que combinan perspicacia clínica, reflexión cultural y crecimiento personal.",
+    "featuredBooks": "Libros Destacados",
+    "learnMore": "Saber Más",
+    "buyNow": "Comprar Ahora"
+  },
+  "contact": {
+    "title": "Ponte en Contacto",
+    "subtitle": "Me encantaría saber de ti. Ya sea que tengas una pregunta sobre mi trabajo, quieras colaborar, o simplemente quieras saludar, no dudes en contactarme.",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "subject": "Asunto",
+    "message": "Mensaje",
+    "inquiryType": "Tipo de Consulta",
+    "inquiryTypes": {
+      "general": "Consulta General",
+      "collaboration": "Colaboración",
+      "speaking": "Evento de Oratoria",
+      "media": "Consulta de Medios"
+    },
+    "sendMessage": "Enviar Mensaje",
+    "sending": "Enviando...",
+    "successMessage": "¡Gracias por tu mensaje! Te responderé pronto.",
+    "responseTime": "Típicamente respondo a los mensajes dentro de 24-48 horas. Para consultas urgentes, por favor llama o envía un correo directamente."
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "email": "Por favor ingresa un correo electrónico válido",
+    "minLength": "Debe tener al menos {min} caracteres",
+    "maxLength": "No debe tener más de {max} caracteres"
+  },
+  "dates": {
+    "published": "Publicado el {date}",
+    "updated": "Actualizado el {date}",
+    "eventDate": "Evento el {date}"
+  },
+  "numbers": {
+    "booksCount": "{count, plural, =0 {Sin libros} =1 {1 libro} other {# libros}}",
+    "readersCount": "{count, number} lectores inspirados",
+    "yearsExperience": "{count}+ años de experiencia"
+  }
+}
