@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -17,8 +17,9 @@ import {
   FaCalendar
 } from 'react-icons/fa6'
 import { BlogPost, PostFilters } from '@/types/blog'
-import { mockBlogPosts, mockCategories } from '@/lib/blog/mockData'
-import { formatDate } from '@/lib/i18n/utils'
+import { getBlogPosts, getBlogCategories, deleteBlogPost } from '@/lib/actions/blog'
+import { BlogCategory } from '@/types/blog'
+import { toast } from 'sonner'
 
 interface PostListProps {
   onCreateNew: () => void
@@ -26,13 +27,42 @@ interface PostListProps {
 }
 
 export function PostList({ onCreateNew, onEditPost }: PostListProps) {
-  const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts)
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [categories, setCategories] = useState<BlogCategory[]>([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<PostFilters>({
     status: 'all',
     sortBy: 'newest'
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [postsResult, categoriesResult] = await Promise.all([
+          getBlogPosts(),
+          getBlogCategories()
+        ])
+
+        if (postsResult.success) {
+          setPosts(postsResult.posts)
+        }
+
+        if (categoriesResult.success) {
+          setCategories(categoriesResult.categories)
+        }
+      } catch (error) {
+        console.error('Error loading data:', error)
+        toast.error('Failed to load blog data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const filteredPosts = posts
     .filter(post => {
@@ -55,10 +85,32 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
       }
     })
 
-  const handleDeletePost = (postId: string) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post.id !== postId))
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) {
+      return
     }
+
+    try {
+      const result = await deleteBlogPost(postId)
+      if (result.success) {
+        setPosts(posts.filter(post => post.id !== postId))
+        toast.success('Post deleted successfully')
+      } else {
+        toast.error(result.error || 'Failed to delete post')
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      toast.error('An unexpected error occurred')
+    }
+  }
+
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   }
 
   const getStatusColor = (status: string) => {
@@ -75,6 +127,17 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
     published: posts.filter(p => p.status === 'published').length,
     drafts: posts.filter(p => p.status === 'draft').length,
     totalViews: posts.reduce((sum, p) => sum + p.views, 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading posts...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -188,7 +251,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">All Categories</option>
-                    {mockCategories.map(category => (
+                    {categories.map(category => (
                       <option key={category.id} value={category.name}>{category.name}</option>
                     ))}
                   </select>
@@ -278,7 +341,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                   <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                     <span className="flex items-center gap-1">
                       <FaCalendar size={12} />
-                      {formatDate(post.createdAt, 'en')}
+                      {formatDate(post.createdAt)}
                     </span>
                     <span className="flex items-center gap-1">
                       <FaClock size={12} />
