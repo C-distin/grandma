@@ -23,8 +23,8 @@ export function Header() {
     { name: t('home'), href: `/${locale}` },
     { name: t('about'), href: `/${locale}/about` },
     { name: t('books'), href: `/${locale}/books` },
-    { name: t('stories'), href: `/${locale}/stories` },
-    { name: t('gallery'), href: `/${locale}/gallery` },
+    { name: 'Blog', href: `/${locale}/blog` },
+    { name: 'Dashboard', href: `/${locale}/dashboard` },
     { name: t('speaking'), href: `/${locale}/speaking` },
     { name: t('contact'), href: `/${locale}/contact` },
   ]
