@@ -12,7 +12,7 @@ export interface BlogPost {
   }
   category: string
   tags: string[]
-  status: 'draft' | 'published' | 'archived'
+  status: "draft" | "published" | "archived"
   publishedAt?: Date
   createdAt: Date
   updatedAt: Date
@@ -37,12 +37,12 @@ export interface CreatePostData {
   tags: string[]
   featuredImage?: File
   images?: File[]
-  status: 'draft' | 'published'
+  status: "draft" | "published"
 }
 
 export interface PostFilters {
-  status?: 'all' | 'draft' | 'published' | 'archived'
+  status?: "all" | "draft" | "published" | "archived"
   category?: string
   search?: string
-  sortBy?: 'newest' | 'oldest' | 'title' | 'views'
+  sortBy?: "newest" | "oldest" | "title" | "views"
 }
