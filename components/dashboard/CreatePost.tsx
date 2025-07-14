@@ -7,7 +7,7 @@ import { z } from "zod"
 import { motion } from "motion/react"
 import Image from "next/image"
 import { FaFloppyDisk, FaEye, FaImage, FaTrash, FaPlus, FaXmark, FaMarkdown, FaCode } from "react-icons/fa6"
-import type { CreatePostData } from "@/types/blog"
+import type { CreatePostData, BlogPost } from "@/types/blog"
 import { getBlogCategories } from "@/lib/actions/blog"
 import type { BlogCategory } from "@/types/blog"
 
@@ -40,6 +40,23 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
   const featuredImageRef = useRef<HTMLInputElement>(null)
   const additionalImagesRef = useRef<HTMLInputElement>(null)
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+    setValue,
+  } = useForm<CreatePostForm>({
+    resolver: zodResolver(createPostSchema),
+    defaultValues: {
+      status: "draft",
+      tags: [],
+    },
+  })
+
+  const watchedContent = watch("content", "")
+  const watchedTags = watch("tags", [])
+
   // Load categories and populate form if editing
   useEffect(() => {
     const loadData = async () => {
@@ -64,30 +81,17 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
 
     loadData()
   }, [editingPost, setValue])
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue,
-    getValues,
-  } = useForm<CreatePostForm>({
-    resolver: zodResolver(createPostSchema),
-    defaultValues: {
-      status: "draft",
-      tags: [],
-    },
-  })
-
-  const watchedContent = watch("content", "")
-  const watchedTags = watch("tags", [])
 
   const handleFeaturedImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setFeaturedImage(file)
       const reader = new FileReader()
-      reader.onload = e => setFeaturedImagePreview(e.target?.result as string)
+      reader.onload = e => {
+        if (e.target?.result) {
+          setFeaturedImagePreview(e.target.result as string)
+        }
+      }
       reader.readAsDataURL(file)
     }
   }
@@ -99,7 +103,9 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = e => {
-        setAdditionalImagePreviews(prev => [...prev, e.target?.result as string])
+        if (e.target?.result) {
+          setAdditionalImagePreviews(prev => [...prev, e.target.result as string])
+        }
       }
       reader.readAsDataURL(file)
     })
@@ -123,6 +129,13 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
     setValue("tags", newTags)
   }
 
+  const handleTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      addTag()
+    }
+  }
+
   const onSubmit = (data: CreatePostForm) => {
     const postData: CreatePostData = {
       ...data,
@@ -144,13 +157,40 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
       .replace(/\n/gim, "<br>")
   }
 
+  const handleSaveAsDraft = () => {
+    setValue("status", "draft")
+    // Submit the form with the draft status
+    const formData = {
+      title: watch("title") || "",
+      content: watch("content") || "",
+      excerpt: watch("excerpt") || "",
+      category: watch("category") || "",
+      tags: watch("tags") || [],
+      status: "draft" as const,
+    }
+
+    // Validate the form data
+    const validationResult = createPostSchema.safeParse(formData)
+    if (validationResult.success) {
+      onSubmit(formData)
+    }
+  }
+
+  const removeFeaturedImage = () => {
+    setFeaturedImage(null)
+    setFeaturedImagePreview("")
+    if (featuredImageRef.current) {
+      featuredImageRef.current.value = ""
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Create New Post</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{editingPost ? "Edit Post" : "Create New Post"}</h2>
             <p className="text-gray-600 mt-1">
               {editingPost ? "Edit your blog post" : "Write and publish your blog post"}
             </p>
@@ -284,7 +324,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                     type="text"
                     value={tagInput}
                     onChange={e => setTagInput(e.target.value)}
-                    onKeyPress={e => e.key === "Enter" && (e.preventDefault(), addTag())}
+                    onKeyPress={handleTagKeyPress}
                     placeholder="Add a tag..."
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
@@ -334,11 +374,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setFeaturedImage(null)
-                      setFeaturedImagePreview("")
-                      if (featuredImageRef.current) featuredImageRef.current.value = ""
-                    }}
+                    onClick={removeFeaturedImage}
                     className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm"
                   >
                     <FaTrash size={12} />
@@ -433,8 +469,9 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
 
                 <button
                   type="button"
-                  onClick={() => setValue("status", "draft")}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                  onClick={handleSaveAsDraft}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   Save as Draft
                 </button>
