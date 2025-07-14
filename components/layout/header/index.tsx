@@ -1,12 +1,9 @@
 "use client"
 
 import { motion } from "motion/react"
-import { useTranslations, useLocale } from 'next-intl'
 import Link from "next/link"
 import { useState } from "react"
 import { FaEquals, FaXmark } from "react-icons/fa6"
-import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher"
-import { useDirection } from "@/lib/i18n/utils"
 
 interface NavItem {
   name: string
@@ -15,18 +12,15 @@ interface NavItem {
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const t = useTranslations('navigation')
-  const locale = useLocale()
-  const direction = useDirection()
 
   const navItems: NavItem[] = [
-    { name: t('home'), href: `/${locale}` },
-    { name: t('about'), href: `/${locale}/about` },
-    { name: t('books'), href: `/${locale}/books` },
-    { name: 'Blog', href: `/${locale}/blog` },
-    { name: 'Dashboard', href: `/${locale}/dashboard` },
-    { name: t('speaking'), href: `/${locale}/speaking` },
-    { name: t('contact'), href: `/${locale}/contact` },
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+    { name: 'Books', href: '/books' },
+    { name: 'Blog', href: "/blog" },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Speaking', href: '/speaking' },
+    { name: 'Contact', href: '/contact' },
   ]
 
   const toggleMobileMenu = () => {
@@ -48,7 +42,7 @@ export function Header() {
             className="flex items-center gap-3"
           >
             <Link
-              href={`/${locale}`}
+              href="/"
               className="flex items-center gap-3"
             >
               <div>
@@ -80,14 +74,13 @@ export function Header() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <LocaleSwitcher />
-            <Link href={`/${locale}/contact`}>
+            <Link href="/contact">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                {t('contact')}
+                Contact
               </motion.button>
             </Link>
           </div>
@@ -125,13 +118,12 @@ export function Header() {
               </Link>
             ))}
             <div className="px-4 pt-2 space-y-2">
-              <LocaleSwitcher />
-              <Link href={`/${locale}/contact`}>
+              <Link href="/contact">
                 <button
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   type="button"
                 >
-                  {t('contact')}
+                  Contact
                 </button>
               </Link>
             </div>

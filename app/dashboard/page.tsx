@@ -12,6 +12,8 @@ import {
 import { PostList } from '@/components/dashboard/PostList'
 import { CreatePost } from '@/components/dashboard/CreatePost'
 import { BlogPost, CreatePostData } from '@/types/blog'
+import { createBlogPost, updateBlogPost } from '@/lib/actions/blog'
+import { toast } from 'sonner'
 
 type TabType = 'list' | 'create' | 'analytics' | 'settings'
 
@@ -36,11 +38,37 @@ export default function DashboardPage() {
     setActiveTab('create')
   }
 
-  const handleSavePost = (data: CreatePostData) => {
-    console.log('Saving post:', data)
-    // In a real app, this would save to your backend
-    setActiveTab('list')
-    setEditingPost(null)
+  const handleSavePost = async (data: CreatePostData) => {
+    try {
+      const formData = new FormData()
+      formData.append('title', data.title)
+      formData.append('excerpt', data.excerpt)
+      formData.append('content', data.content)
+      formData.append('category', data.category)
+      formData.append('tags', JSON.stringify(data.tags))
+      formData.append('status', data.status)
+      if (data.featuredImage) {
+        formData.append('featuredImage', data.featuredImage)
+      }
+
+      let result
+      if (editingPost) {
+        result = await updateBlogPost(editingPost.id, formData)
+      } else {
+        result = await createBlogPost(formData)
+      }
+
+      if (result.success) {
+        toast.success(editingPost ? 'Post updated successfully!' : 'Post created successfully!')
+        setActiveTab('list')
+        setEditingPost(null)
+      } else {
+        toast.error(result.error || 'Failed to save post')
+      }
+    } catch (error) {
+      console.error('Error saving post:', error)
+      toast.error('An unexpected error occurred')
+    }
   }
 
   const handleCancelEdit = () => {
@@ -60,6 +88,7 @@ export default function DashboardPage() {
       case 'create':
         return (
           <CreatePost 
+            editingPost={editingPost}
             onSave={handleSavePost}
             onCancel={handleCancelEdit}
           />

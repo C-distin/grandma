@@ -1,33 +1,7 @@
-export interface BlogPost {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  content: string
-  featuredImage?: string
-  images: string[]
-  author: {
-    name: string
-    avatar?: string
-  }
-  category: string
-  tags: string[]
-  status: "draft" | "published" | "archived"
-  publishedAt?: Date
-  createdAt: Date
-  updatedAt: Date
-  readingTime: number
-  views: number
-  likes: number
-}
+import { type BlogPost as DBBlogPost, type BlogCategory as DBBlogCategory } from "@/lib/db/schema"
 
-export interface BlogCategory {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  color: string
-}
+export type BlogPost = DBBlogPost
+export type BlogCategory = DBBlogCategory
 
 export interface CreatePostData {
   title: string
@@ -35,8 +9,7 @@ export interface CreatePostData {
   excerpt: string
   category: string
   tags: string[]
-  featuredImage?: File
-  images?: File[]
+  featuredImage?: string
   status: "draft" | "published"
 }
 

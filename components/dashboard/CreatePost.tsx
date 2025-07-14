@@ -17,7 +17,8 @@ import {
   FaCode
 } from 'react-icons/fa6'
 import { CreatePostData } from '@/types/blog'
-import { mockCategories } from '@/lib/blog/mockData'
+import { getBlogCategories } from '@/lib/actions/blog'
+import { BlogCategory } from '@/types/blog'
 
 const createPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
@@ -31,21 +32,47 @@ const createPostSchema = z.object({
 type CreatePostForm = z.infer<typeof createPostSchema>
 
 interface CreatePostProps {
+  editingPost?: BlogPost | null
   onSave: (data: CreatePostData) => void
   onCancel: () => void
 }
 
-export function CreatePost({ onSave, onCancel }: CreatePostProps) {
+export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
   const [featuredImage, setFeaturedImage] = useState<File | null>(null)
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>('')
   const [additionalImages, setAdditionalImages] = useState<File[]>([])
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [isPreviewMode, setIsPreviewMode] = useState(false)
+  const [categories, setCategories] = useState<BlogCategory[]>([])
   
   const featuredImageRef = useRef<HTMLInputElement>(null)
   const additionalImagesRef = useRef<HTMLInputElement>(null)
 
+  // Load categories and populate form if editing
+  useEffect(() => {
+    const loadData = async () => {
+      const categoriesResult = await getBlogCategories()
+      if (categoriesResult.success) {
+        setCategories(categoriesResult.categories)
+      }
+
+      if (editingPost) {
+        setValue('title', editingPost.title)
+        setValue('excerpt', editingPost.excerpt)
+        setValue('content', editingPost.content)
+        setValue('category', editingPost.category)
+        setValue('tags', editingPost.tags)
+        setValue('status', editingPost.status as 'draft' | 'published')
+        
+        if (editingPost.featuredImage) {
+          setFeaturedImagePreview(editingPost.featuredImage)
+        }
+      }
+    }
+
+    loadData()
+  }, [editingPost, setValue])
   const {
     register,
     handleSubmit,
@@ -133,7 +160,9 @@ export function CreatePost({ onSave, onCancel }: CreatePostProps) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Create New Post</h2>
-            <p className="text-gray-600 mt-1">Write and publish your blog post</p>
+            <p className="text-gray-600 mt-1">
+              {editingPost ? 'Edit your blog post' : 'Write and publish your blog post'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -253,7 +282,7 @@ export function CreatePost({ onSave, onCancel }: CreatePostProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select a category</option>
-                    {mockCategories.map(category => (
+                   {categories.map(category => (
                       <option key={category.id} value={category.name}>
                         {category.name}
                       </option>
@@ -416,7 +445,7 @@ export function CreatePost({ onSave, onCancel }: CreatePostProps) {
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-3 rounded-lg font-medium transition-colors"
                 >
                   <FaSave size={16} />
-                  {isSubmitting ? 'Saving...' : 'Save Post'}
+                  {isSubmitting ? 'Saving...' : editingPost ? 'Update Post' : 'Save Post'}
                 </motion.button>
                 
                 <button

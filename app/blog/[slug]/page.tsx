@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { 
   FaCalendar, 
@@ -15,8 +14,7 @@ import {
   FaArrowLeft,
   FaTag
 } from 'react-icons/fa6'
-import { mockBlogPosts } from '@/lib/blog/mockData'
-import { formatDate } from '@/lib/i18n/utils'
+import { getBlogPostBySlug, getBlogPosts, incrementPostLikes } from '@/lib/actions/blog'
 import { BlogPost } from '@/types/blog'
 
 interface PageProps {
@@ -26,37 +24,66 @@ interface PageProps {
 export default function BlogPostPage({ params }: PageProps) {
   const [slug, setSlug] = useState<string | null>(null)
   const [post, setPost] = useState<BlogPost | null>(null)
-  const locale = useLocale()
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const resolveParams = async () => {
       const resolvedParams = await params
       setSlug(resolvedParams.slug)
 
-      const foundPost = mockBlogPosts.find(p => p.slug === resolvedParams.slug && p.status === 'published')
-      if (!foundPost) {
+      try {
+        const postResult = await getBlogPostBySlug(resolvedParams.slug)
+        
+        if (!postResult.success || !postResult.post) {
+          notFound()
+        }
+
+        setPost(postResult.post)
+
+        // Fetch related posts
+        const relatedResult = await getBlogPosts({
+          status: 'published',
+          category: postResult.post.category,
+          limit: 3
+        })
+
+        if (relatedResult.success) {
+          const filtered = relatedResult.posts.filter(p => p.id !== postResult.post!.id)
+          setRelatedPosts(filtered.slice(0, 3))
+        }
+      } catch (error) {
+        console.error('Error fetching blog post:', error)
         notFound()
+      } finally {
+        setLoading(false)
       }
-      setPost(foundPost)
     }
 
     resolveParams()
   }, [params])
 
-  if (!slug || !post) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+  const handleLike = async () => {
+    if (!post) return
+
+    try {
+      const result = await incrementPostLikes(post.id)
+      if (result.success && result.post) {
+        setPost(result.post)
+      }
+    } catch (error) {
+      console.error('Error liking post:', error)
+    }
   }
 
-  const relatedPosts = mockBlogPosts
-    .filter(p => p.id !== post.id && p.status === 'published' && p.category === post.category)
-    .slice(0, 3)
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
 
   const renderContent = (content: string) => {
     return content
@@ -69,6 +96,21 @@ export default function BlogPostPage({ params }: PageProps) {
       .replace(/\n/gim, '<br>')
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!post) {
+    notFound()
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -79,7 +121,7 @@ export default function BlogPostPage({ params }: PageProps) {
           className="mb-8"
         >
           <Link
-            href={`/${locale}/blog`}
+            href="/blog"
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
           >
             <FaArrowLeft size={16} />
@@ -105,21 +147,21 @@ export default function BlogPostPage({ params }: PageProps) {
           
           <div className="flex items-center gap-6 text-gray-600 mb-6">
             <div className="flex items-center gap-2">
-              {post.author.avatar && (
+              {post.authorAvatar && (
                 <Image
-                  src={post.author.avatar}
-                  alt={post.author.name}
+                  src={post.authorAvatar}
+                  alt={post.authorName}
                   width={32}
                   height={32}
                   className="w-8 h-8 rounded-full object-cover"
                 />
               )}
-              <span className="font-medium">{post.author.name}</span>
+              <span className="font-medium">{post.authorName}</span>
             </div>
             
             <span className="flex items-center gap-1">
               <FaCalendar size={14} />
-              {formatDate(post.publishedAt || post.createdAt, locale)}
+              {formatDate(post.publishedAt || post.createdAt)}
             </span>
             
             <span className="flex items-center gap-1">
@@ -198,7 +240,10 @@ export default function BlogPostPage({ params }: PageProps) {
           className="flex items-center justify-between py-6 border-t border-b border-gray-200 mb-12"
         >
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleLike}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            >
               <FaHeart size={16} />
               {post.likes} Likes
             </button>
@@ -210,7 +255,7 @@ export default function BlogPostPage({ params }: PageProps) {
           </div>
           
           <div className="text-sm text-gray-500">
-            Last updated: {formatDate(post.updatedAt, locale)}
+            Last updated: {formatDate(post.updatedAt)}
           </div>
         </motion.div>
 
@@ -226,7 +271,7 @@ export default function BlogPostPage({ params }: PageProps) {
               {relatedPosts.map(relatedPost => (
                 <Link
                   key={relatedPost.id}
-                  href={`/${locale}/blog/${relatedPost.slug}`}
+                  href={`/blog/${relatedPost.slug}`}
                   className="group"
                 >
                   <div className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow">

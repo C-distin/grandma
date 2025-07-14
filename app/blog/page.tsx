@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
 import { 
   FaCalendar, 
   FaClock, 
@@ -13,18 +13,43 @@ import {
   FaSearch,
   FaFilter
 } from 'react-icons/fa6'
-import { mockBlogPosts, mockCategories } from '@/lib/blog/mockData'
-import { formatDate } from '@/lib/i18n/utils'
-import { useState } from 'react'
+import { getBlogPosts, getBlogCategories } from '@/lib/actions/blog'
+import { BlogPost, BlogCategory } from '@/types/blog'
+import { useState as useStateHook } from 'react'
 
 export default function BlogPage() {
-  const locale = useLocale()
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [categories, setCategories] = useState<BlogCategory[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
 
-  const publishedPosts = mockBlogPosts.filter(post => post.status === 'published')
-  
-  const filteredPosts = publishedPosts.filter(post => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [postsResult, categoriesResult] = await Promise.all([
+          getBlogPosts({ status: 'published' }),
+          getBlogCategories()
+        ])
+
+        if (postsResult.success) {
+          setPosts(postsResult.posts)
+        }
+
+        if (categoriesResult.success) {
+          setCategories(categoriesResult.categories)
+        }
+      } catch (error) {
+        console.error('Error fetching blog data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const filteredPosts = posts.filter(post => {
     const matchesSearch = !searchTerm || 
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
@@ -36,6 +61,26 @@ export default function BlogPage() {
 
   const featuredPost = filteredPosts[0]
   const otherPosts = filteredPosts.slice(1)
+
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading blog posts...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -78,7 +123,7 @@ export default function BlogPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">All Categories</option>
-                  {mockCategories.map(category => (
+                  {categories.map(category => (
                     <option key={category.id} value={category.name}>
                       {category.name}
                     </option>
@@ -137,7 +182,7 @@ export default function BlogPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
                         <span className="flex items-center gap-1">
                           <FaCalendar size={12} />
-                          {formatDate(featuredPost.publishedAt || featuredPost.createdAt, locale)}
+                          {formatDate(featuredPost.publishedAt || featuredPost.createdAt)}
                         </span>
                         <span className="flex items-center gap-1">
                           <FaClock size={12} />
@@ -149,7 +194,7 @@ export default function BlogPage() {
                         </span>
                       </div>
                       
-                      <Link href={`/${locale}/blog/${featuredPost.slug}`}>
+                      <Link href={`/blog/${featuredPost.slug}`}>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
@@ -191,8 +236,8 @@ export default function BlogPage() {
                         <span 
                           className="px-2 py-1 text-xs font-medium rounded-full"
                           style={{ 
-                            backgroundColor: mockCategories.find(c => c.name === post.category)?.color + '20',
-                            color: mockCategories.find(c => c.name === post.category)?.color
+                            backgroundColor: categories.find(c => c.name === post.category)?.color + '20',
+                            color: categories.find(c => c.name === post.category)?.color
                           }}
                         >
                           {post.category}
@@ -210,7 +255,7 @@ export default function BlogPage() {
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
                         <span className="flex items-center gap-1">
                           <FaCalendar size={10} />
-                          {formatDate(post.publishedAt || post.createdAt, locale)}
+                          {formatDate(post.publishedAt || post.createdAt)}
                         </span>
                         <span className="flex items-center gap-1">
                           <FaClock size={10} />
@@ -222,7 +267,7 @@ export default function BlogPage() {
                         </span>
                       </div>
                       
-                      <Link href={`/${locale}/blog/${post.slug}`}>
+                      <Link href={`/blog/${post.slug}`}>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
