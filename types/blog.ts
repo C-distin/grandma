@@ -19,3 +19,9 @@ export interface PostFilters {
   search?: string
   sortBy?: "newest" | "oldest" | "title" | "views"
 }
+
+export interface CreateCategoryData {
+  name: string
+  description?: string
+  color: string
+}
