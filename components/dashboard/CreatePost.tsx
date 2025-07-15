@@ -103,8 +103,9 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = e => {
-        if (e.target?.result) {
-          setAdditionalImagePreviews(prev => [...prev, e.target.result as string])
+        const target = e.target as FileReader | null
+        if (target && target.result) {
+          setAdditionalImagePreviews(prev => [...prev, target.result as string])
         }
       }
       reader.readAsDataURL(file)
@@ -139,8 +140,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
   const onSubmit = (data: CreatePostForm) => {
     const postData: CreatePostData = {
       ...data,
-      featuredImage: featuredImage || undefined,
-      images: additionalImages.length > 0 ? additionalImages : undefined,
+      featuredImage: featuredImagePreview || undefined,
     }
     onSave(postData)
   }
@@ -332,6 +332,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                     type="button"
                     onClick={addTag}
                     className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    title="Add tag"
                   >
                     <FaPlus size={14} />
                   </button>
@@ -348,6 +349,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                         type="button"
                         onClick={() => removeTag(tag)}
                         className="hover:text-blue-600"
+                        title={`Remove tag ${tag}`}
                       >
                         <FaXmark size={12} />
                       </button>
@@ -389,6 +391,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                     accept="image/*"
                     onChange={handleFeaturedImageChange}
                     className="hidden"
+                    title="Upload a featured image for this post"
                   />
                   <button
                     type="button"
@@ -426,6 +429,7 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                       type="button"
                       onClick={() => removeAdditionalImage(index)}
                       className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                      title={`Remove additional image ${index + 1}`}
                     >
                       <FaXmark size={12} />
                     </button>
@@ -440,6 +444,8 @@ export function CreatePost({ editingPost, onSave, onCancel }: CreatePostProps) {
                     multiple
                     onChange={handleAdditionalImagesChange}
                     className="hidden"
+                    placeholder="Select additional images"
+                    title="Select additional images"
                   />
                   <button
                     type="button"
