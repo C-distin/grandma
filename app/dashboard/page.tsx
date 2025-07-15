@@ -2,22 +2,34 @@
 
 import { useState } from "react"
 import { motion } from "motion/react"
-import { FaList, FaPlus, FaChartLine, FaGears, FaArrowLeft } from "react-icons/fa6"
+import { FaList, FaPlus, FaChartLine, FaGears, FaArrowLeft, FaTag } from "react-icons/fa6"
 import { PostList } from "@/components/dashboard/PostList"
 import { CreatePost } from "@/components/dashboard/CreatePost"
+import { CategoryList } from "@/components/dashboard/CategoryList"
+import { CreateCategory } from "@/components/dashboard/CreateCategory"
 import type { BlogPost, CreatePostData } from "@/types/blog"
+import type { BlogCategory } from "@/types/blog"
 import { createBlogPost, updateBlogPost } from "@/lib/actions/blog"
+import { createBlogCategory, updateBlogCategory } from "@/lib/actions/categories"
 import { toast } from "sonner"
 
-type TabType = "list" | "create" | "analytics" | "settings"
+type TabType = "list" | "create" | "categories" | "create-category" | "analytics" | "settings"
+
+interface CreateCategoryData {
+  name: string
+  description?: string
+  color: string
+}
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("list")
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
+  const [editingCategory, setEditingCategory] = useState<BlogCategory | null>(null)
 
   const tabs = [
     { id: "list" as TabType, name: "All Posts", icon: FaList },
     { id: "create" as TabType, name: "Create Post", icon: FaPlus },
+    { id: "categories" as TabType, name: "Categories", icon: FaTag },
     { id: "analytics" as TabType, name: "Analytics", icon: FaChartLine },
     { id: "settings" as TabType, name: "Settings", icon: FaGears },
   ]
@@ -30,6 +42,16 @@ export default function DashboardPage() {
   const handleEditPost = (post: BlogPost) => {
     setEditingPost(post)
     setActiveTab("create")
+  }
+
+  const handleCreateCategory = () => {
+    setEditingCategory(null)
+    setActiveTab("create-category")
+  }
+
+  const handleEditCategory = (category: BlogCategory) => {
+    setEditingCategory(category)
+    setActiveTab("create-category")
   }
 
   const handleSavePost = async (data: CreatePostData) => {
@@ -65,9 +87,43 @@ export default function DashboardPage() {
     }
   }
 
+  const handleSaveCategory = async (data: CreateCategoryData) => {
+    try {
+      const formData = new FormData()
+      formData.append("name", data.name)
+      if (data.description) {
+        formData.append("description", data.description)
+      }
+      formData.append("color", data.color)
+
+      let result
+      if (editingCategory) {
+        result = await updateBlogCategory(editingCategory.id, formData)
+      } else {
+        result = await createBlogCategory(formData)
+      }
+
+      if (result.success) {
+        toast.success(editingCategory ? "Category updated successfully!" : "Category created successfully!")
+        setActiveTab("categories")
+        setEditingCategory(null)
+      } else {
+        toast.error(result.error || "Failed to save category")
+      }
+    } catch (error) {
+      console.error("Error saving category:", error)
+      toast.error("An unexpected error occurred")
+    }
+  }
+
   const handleCancelEdit = () => {
     setActiveTab("list")
     setEditingPost(null)
+  }
+
+  const handleCancelCategoryEdit = () => {
+    setActiveTab("categories")
+    setEditingCategory(null)
   }
 
   const renderTabContent = () => {
@@ -85,6 +141,21 @@ export default function DashboardPage() {
             editingPost={editingPost}
             onSave={handleSavePost}
             onCancel={handleCancelEdit}
+          />
+        )
+      case "categories":
+        return (
+          <CategoryList
+            onCreateNew={handleCreateCategory}
+            onEditCategory={handleEditCategory}
+          />
+        )
+      case "create-category":
+        return (
+          <CreateCategory
+            editingCategory={editingCategory}
+            onSave={handleSaveCategory}
+            onCancel={handleCancelCategoryEdit}
           />
         )
       case "analytics":
@@ -121,7 +192,7 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <motion.button
-              onClick={() => window.history.back()}
+              onClick={() => setActiveTab("list")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -139,7 +210,11 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              {tabs.map(tab => {
+              {tabs
+                .filter(tab => {
+                  // Hide create-category tab from navigation
+                  return tab.id !== "create-category"
+                }).map(tab => {
                 const isActive = activeTab === tab.id
                 return (
                   <motion.button
