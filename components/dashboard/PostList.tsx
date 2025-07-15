@@ -252,7 +252,9 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <select
+                    id="status-filter"
                     value={filters.status}
                     onChange={e => setFilters({ ...filters, status: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -265,8 +267,9 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
+                    id="category-filter"
                     value={filters.category || ""}
                     onChange={e => setFilters({ ...filters, category: e.target.value || undefined })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -284,8 +287,9 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                  <label htmlFor="sortby-filter" className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
                   <select
+                    id="sortby-filter"
                     value={filters.sortBy}
                     onChange={e => setFilters({ ...filters, sortBy: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
