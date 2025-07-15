@@ -18,7 +18,6 @@ export function Header() {
     { name: 'About', href: '/about' },
     { name: 'Books', href: '/books' },
     { name: 'Blog', href: "/blog" },
-    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Speaking', href: '/speaking' },
     { name: 'Contact', href: '/contact' },
   ]
