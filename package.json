@@ -8,7 +8,10 @@
 		"start": "next start",
 		"lint": "next lint",
 		"biome:ts": "biome check --fix --unsafe **/*.ts",
-		"biome:tsx": "biome check --fix --unsafe **/*.tsx"
+		"biome:tsx": "biome check --fix --unsafe **/*.tsx",
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
+		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
