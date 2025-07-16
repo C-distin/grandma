@@ -8,7 +8,10 @@
 		"start": "next start",
 		"lint": "next lint",
 		"biome:ts": "biome check --fix --unsafe **/*.ts",
-		"biome:tsx": "biome check --fix --unsafe **/*.tsx"
+		"biome:tsx": "biome check --fix --unsafe **/*.tsx",
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
+		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
@@ -17,7 +20,7 @@
 		"drizzle-orm": "^0.44.2",
 		"drizzle-zod": "^0.8.2",
 		"motion": "^12.23.3",
-		"next": "15.3.5",
+		"next": "^15.4.1",
 		"postgres": "^3.4.7",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",

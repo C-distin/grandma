@@ -1,8 +1,8 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { blogPosts, blogCategories, insertBlogPostSchema, type NewBlogPost, type BlogPost } from "@/lib/db/schema"
-import { eq, desc, asc, ilike, and, or } from "drizzle-orm"
+import { blogPosts, blogCategories, insertBlogPostSchema, blogPostQuerySchema, type NewBlogPost, type BlogPost, type BlogPostQuery } from "@/lib/db/schema"
+import { eq, desc, asc, ilike, and, or, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
@@ -59,7 +59,7 @@ export async function createBlogPost(formData: FormData) {
     console.error("Error creating blog post:", error)
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "Failed to create blog post" 
+      error: error instanceof z.ZodError ? error.flatten() : (error instanceof Error ? error.message : "Failed to create blog post")
     }
   }
 }
@@ -79,7 +79,11 @@ export async function updateBlogPost(id: string, formData: FormData) {
 
     // Get existing post to preserve some fields
     const [existingPost] = await db
-      .select()
+      .select({ 
+        title: blogPosts.title, 
+        slug: blogPosts.slug, 
+        publishedAt: blogPosts.publishedAt 
+      })
       .from(blogPosts)
       .where(eq(blogPosts.id, id))
       .limit(1)
@@ -113,7 +117,7 @@ export async function updateBlogPost(id: string, formData: FormData) {
     console.error("Error updating blog post:", error)
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "Failed to update blog post" 
+      error: error instanceof z.ZodError ? error.flatten() : (error instanceof Error ? error.message : "Failed to update blog post") 
     }
   }
 }
@@ -144,37 +148,28 @@ export async function deleteBlogPost(id: string) {
 }
 
 // Get all blog posts with filtering and sorting
-export async function getBlogPosts(options: {
-  status?: "all" | "draft" | "published" | "archived"
-  category?: string
-  search?: string
-  sortBy?: "newest" | "oldest" | "title" | "views"
-  limit?: number
-  offset?: number
-} = {}) {
+export async function getBlogPosts(searchParams: unknown) {
   try {
+    // Validate & set defaults
     const {
-      status = "all",
-      category,
-      search,
-      sortBy = "newest",
+      page,
       limit,
-      offset = 0
-    } = options
+      category,
+      tag,
+      status,
+      search,
+      sortBy,
+      sortOrder,
+    } = blogPostQuerySchema.parse(searchParams)
 
-    let query = db.select().from(blogPosts)
+    const offset = (page - 1) * limit
 
-    // Apply filters
+    /* ---------- WHERE clause ---------- */
     const conditions = []
-    
-    if (status !== "all") {
-      conditions.push(eq(blogPosts.status, status))
-    }
-    
-    if (category) {
-      conditions.push(eq(blogPosts.category, category))
-    }
-    
+
+    if (status) conditions.push(eq(blogPosts.status, status))
+    if (category) conditions.push(eq(blogPosts.category, category))
+    if (tag) conditions.push(sql`${tag} = ANY(${blogPosts.tags})`)
     if (search) {
       conditions.push(
         or(
@@ -184,43 +179,50 @@ export async function getBlogPosts(options: {
       )
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions))
-    }
+    const whereClause =
+      conditions.length > 0 ? and(...conditions) : undefined
 
-    // Apply sorting
-    switch (sortBy) {
-      case "oldest":
-        query = query.orderBy(asc(blogPosts.createdAt))
-        break
-      case "title":
-        query = query.orderBy(asc(blogPosts.title))
-        break
-      case "views":
-        query = query.orderBy(desc(blogPosts.views))
-        break
-      default: // newest
-        query = query.orderBy(desc(blogPosts.createdAt))
-        break
+    /* ---------- ORDER clause ---------- */
+    const orderMap = {
+      createdAt: blogPosts.createdAt,
+      publishedAt: blogPosts.publishedAt,
+      views: blogPosts.views,
+      likes: blogPosts.likes,
+      title: blogPosts.title,
     }
+    const orderByClause =
+      sortOrder === "asc"
+        ? asc(orderMap[sortBy])
+        : desc(orderMap[sortBy])
 
-    // Apply pagination
-    if (limit) {
-      query = query.limit(limit)
+    /* ---------- Parallel count & rows ---------- */
+    const [rows, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(blogPosts)
+        .where(whereClause)
+        .orderBy(orderByClause)
+        .limit(limit)
+        .offset(offset),
+
+      db
+        .select({ total: sql<number>`cast(count(*) as int)` })
+        .from(blogPosts)
+        .where(whereClause),
+    ])
+
+    return {
+      success: true,
+      data: rows,
+      meta: { page, limit, total },
     }
-    if (offset > 0) {
-      query = query.offset(offset)
-    }
-
-    const posts = await query
-
-    return { success: true, posts }
   } catch (error) {
     console.error("Error fetching blog posts:", error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to fetch blog posts",
-      posts: []
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      data: [],
+      meta: { page: 1, limit: 10, total: 0 },
     }
   }
 }
@@ -228,32 +230,33 @@ export async function getBlogPosts(options: {
 // Get single blog post by slug
 export async function getBlogPostBySlug(slug: string) {
   try {
+    // Atomically increment the view count and then fetch the post
     const [post] = await db
-      .select()
-      .from(blogPosts)
-      .where(eq(blogPosts.slug, slug))
-      .limit(1)
-
+      .update(blogPosts)
+      .set({ views: sql`${blogPosts.views} + 1` })
+      .where(and(eq(blogPosts.slug, slug), eq(blogPosts.status, "published")))
+      .returning();
+      
     if (!post) {
-      return { success: false, error: "Blog post not found", post: null }
+      // If the update didn't return a post (e.g., it's a draft), try fetching it without incrementing
+      const [draftPost] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
+      if (!draftPost) {
+          return { success: false, error: "Blog post not found", post: null };
+      }
+      return { success: true, post: draftPost };
     }
 
-    // Increment view count
-    await db
-      .update(blogPosts)
-      .set({ views: post.views + 1 })
-      .where(eq(blogPosts.id, post.id))
-
-    return { success: true, post: { ...post, views: post.views + 1 } }
+    return { success: true, post };
   } catch (error) {
-    console.error("Error fetching blog post:", error)
+    console.error("Error fetching blog post:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Failed to fetch blog post",
       post: null
-    }
+    };
   }
 }
+
 
 // Get blog categories
 export async function getBlogCategories() {
@@ -277,9 +280,10 @@ export async function getBlogCategories() {
 // Increment post likes
 export async function incrementPostLikes(id: string) {
   try {
+    // Perform an atomic update to prevent race conditions
     const [updatedPost] = await db
       .update(blogPosts)
-      .set({ likes: blogPosts.likes + 1 })
+      .set({ likes: sql`${blogPosts.likes} + 1` })
       .where(eq(blogPosts.id, id))
       .returning()
 
@@ -287,6 +291,7 @@ export async function incrementPostLikes(id: string) {
       return { success: false, error: "Blog post not found" }
     }
 
+    // Revalidate the path for the specific post
     revalidatePath(`/blog/${updatedPost.slug}`)
     
     return { success: true, post: updatedPost }
