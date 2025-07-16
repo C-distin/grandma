@@ -213,16 +213,16 @@ export async function getBlogPosts(searchParams: unknown) {
 
     return {
       success: true,
-      data: rows,
-      meta: { page, limit, total },
+      posts: rows,
+      pagination: { page, limit, total },
     }
   } catch (error) {
     console.error("Error fetching blog posts:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
-      data: [],
-      meta: { page: 1, limit: 10, total: 0 },
+      posts: [],
+      pagination: { page: 1, limit: 10, total: 0 },
     }
   }
 }
@@ -230,33 +230,42 @@ export async function getBlogPosts(searchParams: unknown) {
 // Get single blog post by slug
 export async function getBlogPostBySlug(slug: string) {
   try {
-    // Atomically increment the view count and then fetch the post
+    // First, try to find the post
     const [post] = await db
-      .update(blogPosts)
-      .set({ views: sql`${blogPosts.views} + 1` })
-      .where(and(eq(blogPosts.slug, slug), eq(blogPosts.status, "published")))
-      .returning();
-      
+      .select()
+      .from(blogPosts)
+      .where(eq(blogPosts.slug, slug))
+      .limit(1)
+
     if (!post) {
-      // If the update didn't return a post (e.g., it's a draft), try fetching it without incrementing
-      const [draftPost] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1);
-      if (!draftPost) {
-          return { success: false, error: "Blog post not found", post: null };
-      }
-      return { success: true, post: draftPost };
+      return { success: false, error: "Blog post not found", post: null }
     }
 
-    return { success: true, post };
+    // If it's a published post, increment the view count
+    if (post.status === "published") {
+      await db
+        .update(blogPosts)
+        .set({ views: sql`${blogPosts.views} + 1` })
+        .where(eq(blogPosts.id, post.id))
+      
+      // Return the post with incremented views
+      return { 
+        success: true, 
+        post: { ...post, views: post.views + 1 }
+      }
+    }
+
+    // Return draft post without incrementing views
+    return { success: true, post }
   } catch (error) {
-    console.error("Error fetching blog post:", error);
+    console.error("Error fetching blog post:", error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Failed to fetch blog post",
       post: null
-    };
+    }
   }
 }
-
 
 // Get blog categories
 export async function getBlogCategories() {

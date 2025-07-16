@@ -41,7 +41,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [postsResult, categoriesResult] = await Promise.all([getBlogPosts(), getBlogCategories()])
+        const [postsResult, categoriesResult] = await Promise.all([
+          getBlogPosts({}), 
+          getBlogCategories()
+        ])
 
         if (postsResult.success) {
           setPosts(postsResult.posts)
