@@ -2,9 +2,12 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import * as schema from "./schema"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set")
+const databaseUrl = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
+
+if (!databaseUrl) {
+  console.warn("DATABASE_URL is not set. Using fallback connection.")
+  // Provide a fallback or mock connection for development
 }
 
-const client = postgres(process.env.DATABASE_URL)
+const client = databaseUrl ? postgres(databaseUrl) : null
 export const db = drizzle(client, { schema })

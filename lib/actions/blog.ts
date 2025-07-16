@@ -270,6 +270,15 @@ export async function getBlogPostBySlug(slug: string) {
 // Get blog categories
 export async function getBlogCategories() {
   try {
+    // Check if database connection is available
+    if (!db) {
+      return { 
+        success: false, 
+        error: "Database connection not available",
+        categories: []
+      }
+    }
+
     const categories = await db
       .select()
       .from(blogCategories)
