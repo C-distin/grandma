@@ -120,7 +120,7 @@ export async function deleteBlogCategory(id: string) {
 }
 
 // Get all blog categories with filtering and sorting
-export async function getAllBlogCategories(options: {
+export async function getBlogCategories(options: {
   search?: string
   sortBy?: "name" | "created"
   limit?: number
@@ -133,6 +133,15 @@ export async function getAllBlogCategories(options: {
       limit,
       offset = 0
     } = options
+
+    // Check database connection
+    if (!db) {
+      return {
+        success: false,
+        error: "Database connection not available",
+        categories: []
+      }
+    }
 
     let query = db.select().from(blogCategories)
 

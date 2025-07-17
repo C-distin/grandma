@@ -42,16 +42,21 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
     const loadData = async () => {
       try {
         const [postsResult, categoriesResult] = await Promise.all([
-          getBlogPosts({}), 
+          getBlogPosts(),
           getBlogCategories()
         ])
 
         if (postsResult.success) {
           setPosts(postsResult.posts)
+        } else {
+          console.error("Failed to load posts:", postsResult.error)
+          toast.error("Failed to load blog posts")
         }
 
         if (categoriesResult.success) {
           setCategories(categoriesResult.categories)
+        } else {
+          console.error("Failed to load categories:", categoriesResult.error)
         }
       } catch (error) {
         console.error("Error loading data:", error)

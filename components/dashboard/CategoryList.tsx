@@ -30,10 +30,11 @@ export function CategoryList({ onCreateNew, onEditCategory }: CategoryListProps)
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const result = await getAllBlogCategories({ sortBy })
+        const result = await getBlogCategories({ sortBy })
         if (result.success) {
           setCategories(result.categories)
         } else {
+          console.error("Failed to load categories:", result.error)
           toast.error(result.error || "Failed to load categories")
         }
       } catch (error) {

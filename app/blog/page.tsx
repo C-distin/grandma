@@ -19,16 +19,20 @@ export default function BlogPage() {
     const fetchData = async () => {
       try {
         const [postsResult, categoriesResult] = await Promise.all([
-          getBlogPosts({ status: "published" }),
+          getBlogPosts({ status: "published", limit: 50 }),
           getBlogCategories(),
         ])
 
         if (postsResult.success) {
           setPosts(postsResult.posts)
+        } else {
+          console.error("Failed to fetch posts:", postsResult.error)
         }
 
         if (categoriesResult.success) {
           setCategories(categoriesResult.categories)
+        } else {
+          console.error("Failed to fetch categories:", categoriesResult.error)
         }
       } catch (error) {
         console.error("Error fetching blog data:", error)

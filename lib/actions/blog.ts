@@ -148,21 +148,31 @@ export async function deleteBlogPost(id: string) {
 }
 
 // Get all blog posts with filtering and sorting
-export async function getBlogPosts(searchParams: unknown) {
+export async function getBlogPosts(searchParams: {
+  status?: "draft" | "published" | "archived"
+  category?: string
+  tag?: string
+  search?: string
+  sortBy?: "newest" | "oldest" | "title" | "views"
+  page?: number
+  limit?: number
+} = {}) {
   try {
-    // Validate & set defaults
-    const {
-      page,
-      limit,
-      category,
-      tag,
-      status,
-      search,
-      sortBy,
-      sortOrder,
-    } = blogPostQuerySchema.parse(searchParams)
+    // Set defaults and validate
+    const page = searchParams.page || 1
+    const limit = searchParams.limit || 10
+    const { status, category, tag, search, sortBy } = searchParams
 
     const offset = (page - 1) * limit
+
+    // Check database connection
+    if (!db) {
+      return {
+        success: false,
+        error: "Database connection not available",
+        posts: [],
+      }
+    }
 
     /* ---------- WHERE clause ---------- */
     const conditions = []
@@ -183,38 +193,34 @@ export async function getBlogPosts(searchParams: unknown) {
       conditions.length > 0 ? and(...conditions) : undefined
 
     /* ---------- ORDER clause ---------- */
-    const orderMap = {
-      createdAt: blogPosts.createdAt,
-      publishedAt: blogPosts.publishedAt,
-      views: blogPosts.views,
-      likes: blogPosts.likes,
-      title: blogPosts.title,
+    let orderByClause
+    switch (sortBy) {
+      case "oldest":
+        orderByClause = asc(blogPosts.createdAt)
+        break
+      case "title":
+        orderByClause = asc(blogPosts.title)
+        break
+      case "views":
+        orderByClause = desc(blogPosts.views)
+        break
+      default: // newest
+        orderByClause = desc(blogPosts.createdAt)
+        break
     }
-    const orderByClause =
-      sortOrder === "asc"
-        ? asc(orderMap[sortBy])
-        : desc(orderMap[sortBy])
 
-    /* ---------- Parallel count & rows ---------- */
-    const [rows, [{ total }]] = await Promise.all([
-      db
-        .select()
-        .from(blogPosts)
-        .where(whereClause)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset(offset),
-
-      db
-        .select({ total: sql<number>`cast(count(*) as int)` })
-        .from(blogPosts)
-        .where(whereClause),
-    ])
+    /* ---------- Query execution ---------- */
+    const rows = await db
+      .select()
+      .from(blogPosts)
+      .where(whereClause)
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset)
 
     return {
       success: true,
       posts: rows,
-      pagination: { page, limit, total },
     }
   } catch (error) {
     console.error("Error fetching blog posts:", error)
@@ -222,7 +228,6 @@ export async function getBlogPosts(searchParams: unknown) {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
       posts: [],
-      pagination: { page: 1, limit: 10, total: 0 },
     }
   }
 }
