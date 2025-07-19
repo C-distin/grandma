@@ -7,49 +7,49 @@ import { notFound } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { toast } from "sonner"
 import { FaEye, FaHeart, FaClock, FaUser, FaCalendar, FaArrowLeft, FaShare, FaBookmark, FaTag } from "react-icons/fa6"
 import type { BlogPost } from "@/lib/db/schema"
 import { getBlogPosts } from "@/lib/actions/blog"
 import { format } from "date-fns"
 
 interface BlogPostPageProps {
-  params: Promise<{ slug: string }>
-}
-
-interface NewsletterFormData {
-  email: string
+  params: Promise<{
+    slug: string
+  }>
 }
 
 export default function BlogPostPage({ params }: BlogPostPageProps) {
   const [post, setPost] = useState<BlogPost | null>(null)
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [newsletterEmail, setNewsletterEmail] = useState("")
-  const [isSubscribing, setIsSubscribing] = useState(false)
+  const [slug, setSlug] = useState<string>("")
 
   useEffect(() => {
-    const loadBlogPost = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+    const getParams = async () => {
+      const resolvedParams = await params
+      setSlug(resolvedParams.slug)
+    }
+    getParams()
+  }, [params])
 
-        const resolvedParams = await params
-        const { slug } = resolvedParams
+  useEffect(() => {
+    if (slug) {
+      loadPost()
+    }
+  }, [slug])
 
-        // Find the specific post by slug
-        const result = await getBlogPosts({
-          page: 1,
-          limit: 100,
-          status: "published",
-        })
+  const loadPost = async () => {
+    try {
+      setLoading(true)
 
-        if (!result.success || !result.data) {
-          throw new Error("Failed to load blog posts")
-        }
+      // Find the specific post by slug
+      const result = await getBlogPosts({
+        page: 1,
+        limit: 100,
+        status: "published",
+      })
 
+      if (result.success && result.data) {
         const foundPost = result.data.find(p => p.slug === slug)
 
         if (!foundPost) {
@@ -63,83 +63,30 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         const related = result.data.filter(p => p.id !== foundPost.id && p.category === foundPost.category).slice(0, 3)
 
         setRelatedPosts(related)
-      } catch (err) {
-        console.error("Error loading post:", err)
-        setError("Failed to load blog post")
-        notFound()
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+      console.error("Error loading post:", error)
+      notFound()
+    } finally {
+      setLoading(false)
     }
-
-    loadBlogPost()
-  }, [params])
+  }
 
   const handleShare = async () => {
-    if (!post) return
-
-    try {
-      if (navigator.share) {
+    if (navigator.share && post) {
+      try {
         await navigator.share({
           title: post.title,
           text: post.excerpt,
           url: window.location.href,
         })
-      } else {
-        // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(window.location.href)
-        toast.success("Link copied!", {
-          description: "Blog post link has been copied to your clipboard.",
-        })
+      } catch (error) {
+        console.log("Error sharing:", error)
       }
-    } catch (err) {
-      console.error("Error sharing:", err)
-      toast.error("Share failed", {
-        description: "Unable to share the blog post. Please try again.",
-      })
-    }
-  }
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!newsletterEmail.trim()) {
-      toast.error("Email required", {
-        description: "Please enter your email address.",
-      })
-      return
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(newsletterEmail)) {
-      toast.error("Invalid email", {
-        description: "Please enter a valid email address.",
-      })
-      return
-    }
-
-    try {
-      setIsSubscribing(true)
-
-      // TODO: Implement newsletter subscription logic
-      // const response = await subscribeToNewsletter(newsletterEmail)
-
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      toast.success("Subscribed!", {
-        description: "Thank you for subscribing to our newsletter.",
-      })
-
-      setNewsletterEmail("")
-    } catch (err) {
-      console.error("Newsletter subscription error:", err)
-      toast.error("Subscription failed", {
-        description: "Unable to subscribe. Please try again later.",
-      })
-    } finally {
-      setIsSubscribing(false)
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href)
+      // You could show a toast here
     }
   }
 
@@ -147,21 +94,15 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-4 bg-gray-200 rounded w-1/4" />
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+            <div className="h-64 bg-gray-200 rounded-lg mb-8"></div>
             <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
-            </div>
-            <div className="h-64 bg-gray-200 rounded-lg" />
-            <div className="space-y-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-4 bg-gray-200 rounded w-full"
-                />
-              ))}
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
             </div>
           </div>
         </div>
@@ -169,7 +110,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     )
   }
 
-  if (error || !post) {
+  if (!post) {
     notFound()
   }
 
@@ -184,7 +125,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         >
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <FaArrowLeft size={16} />
             Back to Blog
@@ -200,15 +141,15 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         >
           {/* Hero Section */}
           <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <div className="text-white text-center p-8 max-w-4xl">
+            <div className="text-white text-center p-8">
               <Badge
                 variant="secondary"
                 className="mb-4"
               >
                 {post.category}
               </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">{post.title}</h1>
-              <p className="text-lg opacity-90 max-w-2xl mx-auto leading-relaxed">{post.excerpt}</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+              <p className="text-lg opacity-90 max-w-2xl">{post.excerpt}</p>
             </div>
           </div>
 
@@ -216,7 +157,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="p-6 border-b">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                   <FaUser
                     className="text-gray-600"
                     size={20}
@@ -236,16 +177,15 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <FaEye size={12} />
-                    {post.views?.toLocaleString()} views
+                    {post.views} views
                   </span>
                   <span className="flex items-center gap-1">
                     <FaHeart size={12} />
-                    {post.likes?.toLocaleString()} likes
+                    {post.likes} likes
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -255,14 +195,12 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     onClick={handleShare}
                   >
                     <FaShare size={14} />
-                    <span className="sr-only">Share article</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                   >
                     <FaBookmark size={14} />
-                    <span className="sr-only">Bookmark article</span>
                   </Button>
                 </div>
               </div>
@@ -271,39 +209,36 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
 
           {/* Article Content */}
           <div className="p-6 md:p-8">
-            <div className="prose prose-lg max-w-none prose-gray">
+            <div className="prose prose-lg max-w-none">
               <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">{post.content}</div>
             </div>
 
             {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-8 pt-6 border-t">
-                <div className="flex items-center gap-2 mb-4">
-                  <FaTag
-                    className="text-gray-400"
-                    size={16}
-                  />
-                  <span className="text-sm font-medium text-gray-700">Tags:</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map(tag => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="hover:bg-gray-200 transition-colors"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center gap-2 mb-4">
+                <FaTag
+                  className="text-gray-400"
+                  size={16}
+                />
+                <span className="text-sm font-medium text-gray-700">Tags:</span>
               </div>
-            )}
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map(tag => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </motion.article>
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <motion.section
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -314,18 +249,12 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
               {relatedPosts.map(relatedPost => (
                 <Card
                   key={relatedPost.id}
-                  className="hover:shadow-lg transition-all duration-300 group"
+                  className="hover:shadow-lg transition-shadow group"
                 >
                   <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                     <div className="text-gray-400 text-center">
                       <div className="w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center mb-2 mx-auto">
-                        <span
-                          className="text-lg"
-                          role="img"
-                          aria-label="Article"
-                        >
-                          📝
-                        </span>
+                        <span className="text-lg">📝</span>
                       </div>
                     </div>
                   </div>
@@ -337,7 +266,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                       {relatedPost.category}
                     </Badge>
                     <Link href={`/blog/${relatedPost.slug}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200 line-clamp-2">
+                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
                         {relatedPost.title}
                       </h3>
                     </Link>
@@ -349,18 +278,18 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                       </span>
                       <span className="flex items-center gap-1">
                         <FaEye size={10} />
-                        {relatedPost.views?.toLocaleString()}
+                        {relatedPost.views}
                       </span>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </motion.section>
+          </motion.div>
         )}
 
-        {/* Newsletter Subscription */}
-        <motion.section
+        {/* Call to Action */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -369,34 +298,18 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
             <CardContent className="p-8 text-center">
               <h3 className="text-2xl font-bold mb-4">Enjoyed this article?</h3>
-              <p className="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
-                Subscribe to our newsletter for more insights and updates delivered straight to your inbox.
-              </p>
-              <form
-                onSubmit={handleNewsletterSubmit}
-                className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
-              >
-                <Input
+              <p className="text-lg opacity-90 mb-6">Subscribe to our newsletter for more insights and updates.</p>
+              <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <input
                   type="email"
                   placeholder="Enter your email"
-                  value={newsletterEmail}
-                  onChange={e => setNewsletterEmail(e.target.value)}
-                  className="flex-1 bg-white text-gray-900 placeholder:text-gray-500 border-0"
-                  required
-                  disabled={isSubscribing}
+                  className="flex-1 px-4 py-2 rounded-lg text-gray-900"
                 />
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  disabled={isSubscribing}
-                  className="whitespace-nowrap"
-                >
-                  {isSubscribing ? "Subscribing..." : "Subscribe"}
-                </Button>
-              </form>
+                <Button variant="secondary">Subscribe</Button>
+              </div>
             </CardContent>
           </Card>
-        </motion.section>
+        </motion.div>
       </div>
     </div>
   )
