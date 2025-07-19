@@ -1,18 +1,18 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  FaBookOpen,
-  FaMugHot,
-  FaEnvelope,
-  FaPenFancy,
-  FaMapLocationDot,
-  FaPhone,
-  FaRegPaperPlane,
-} from "react-icons/fa6"
 import { motion } from "motion/react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import {
+  FaBookOpen,
+  FaEnvelope,
+  FaMapLocationDot,
+  FaMugHot,
+  FaPenFancy,
+  FaPhone,
+  FaRegPaperPlane,
+} from "react-icons/fa6"
 import { z } from "zod"
 
 // Contact form validation schema

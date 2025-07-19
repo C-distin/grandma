@@ -1,8 +1,8 @@
 "use client"
 
-import { FaEnvelope, FaBookOpen, FaBriefcase } from "react-icons/fa6"
 import { motion } from "motion/react"
 import Image from "next/image"
+import { FaBookOpen, FaBriefcase, FaEnvelope } from "react-icons/fa6"
 
 export function AboutPage() {
   return (

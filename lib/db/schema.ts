@@ -33,6 +33,21 @@ export const blogCategories = pgTable("blog_categories", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
+export const galleryImages = pgTable("gallery_images", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  url: text("url").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }),
+  description: text("description"),
+  size: integer("size").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  tags: text("tags").array().default([]),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
 // Zod schemas for validation
 export const insertBlogPostSchema = createInsertSchema(blogPosts, {
   title: z.string().min(1, "Title is required").max(255, "Title too long"),
@@ -71,6 +86,27 @@ export const updateBlogCategorySchema = insertBlogCategorySchema.partial().exten
 
 export const selectBlogCategorySchema = createSelectSchema(blogCategories)
 
+export const insertGalleryImageSchema = createInsertSchema(galleryImages, {
+  url: z.string().url("Invalid URL"),
+  name: z.string().min(1, "Name is required").max(255, "Name too long"),
+  title: z.string().max(255, "Title too long").optional(),
+  description: z.string().optional(),
+  size: z.number().min(1, "Size must be positive"),
+  width: z.number().min(1).optional(),
+  height: z.number().min(1).optional(),
+  tags: z.array(z.string()).default([]),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+})
+
+export const updateGalleryImageSchema = insertGalleryImageSchema.partial().extend({
+  id: z.string().uuid(),
+})
+
+export const selectGalleryImageSchema = createSelectSchema(galleryImages)
+
 // Query schemas for filtering and pagination
 export const blogPostQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -91,10 +127,22 @@ export const blogCategoryQuerySchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 })
 
+export const galleryImageQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  search: z.string().optional(),
+  tag: z.string().optional(),
+  sortBy: z.enum(["uploadedAt", "name", "size"]).default("uploadedAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+})
+
 // Type exports
 export type BlogPost = typeof blogPosts.$inferSelect
 export type NewBlogPost = typeof blogPosts.$inferInsert
 export type BlogCategory = typeof blogCategories.$inferSelect
 export type NewBlogCategory = typeof blogCategories.$inferInsert
+export type GalleryImage = typeof galleryImages.$inferSelect
+export type NewGalleryImage = typeof galleryImages.$inferInsert
 export type BlogPostQuery = z.infer<typeof blogPostQuerySchema>
 export type BlogCategoryQuery = z.infer<typeof blogCategoryQuerySchema>
+export type GalleryImageQuery = z.infer<typeof galleryImageQuerySchema>

@@ -14,12 +14,12 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navItems: NavItem[] = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/about' },
-    { name: 'Books', href: '/books' },
-    { name: 'Blog', href: "/blog" },
-    { name: 'Speaking', href: '/speaking' },
-    { name: 'Contact', href: '/contact' },
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    { name: "Books", href: "/books" },
+    { name: "Blog", href: "/blog" },
+    { name: "Speaking", href: "/speaking" },
+    { name: "Contact", href: "/contact" },
   ]
 
   const toggleMobileMenu = () => {

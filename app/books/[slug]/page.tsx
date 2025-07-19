@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { FaBookOpen } from "react-icons/fa6"
 import Image from "next/image"
 import { notFound } from "next/navigation"
+import { useEffect, useState } from "react"
+import { FaBookOpen } from "react-icons/fa6"
 
 const books = {
   "to-vow-or-not-to-vow": {

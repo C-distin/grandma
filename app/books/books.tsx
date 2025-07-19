@@ -1,9 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { FaUpRightFromSquare } from "react-icons/fa6"
-import Link from "next/link"
 import Image from "next/image"
+import Link from "next/link"
+import { FaUpRightFromSquare } from "react-icons/fa6"
 
 const books = [
   {
