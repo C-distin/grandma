@@ -13,19 +13,30 @@ import { getBlogPosts } from "@/lib/actions/blog"
 import { format } from "date-fns"
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export default function BlogPostPage({ params }: BlogPostPageProps) {
   const [post, setPost] = useState<BlogPost | null>(null)
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [slug, setSlug] = useState<string>("")
 
   useEffect(() => {
-    loadPost()
-  }, [params.slug])
+    const getParams = async () => {
+      const resolvedParams = await params
+      setSlug(resolvedParams.slug)
+    }
+    getParams()
+  }, [params])
+
+  useEffect(() => {
+    if (slug) {
+      loadPost()
+    }
+  }, [slug])
 
   const loadPost = async () => {
     try {
@@ -39,7 +50,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
       })
 
       if (result.success && result.data) {
-        const foundPost = result.data.find(p => p.slug === params.slug)
+        const foundPost = result.data.find(p => p.slug === slug)
 
         if (!foundPost) {
           notFound()
