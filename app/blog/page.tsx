@@ -3,95 +3,75 @@
 import { useState, useEffect } from "react"
 import { motion } from "motion/react"
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { FaEye, FaHeart, FaClock, FaUser, FaCalendar, FaArrowLeft, FaShare, FaBookmark, FaTag } from "react-icons/fa6"
-import type { BlogPost } from "@/lib/db/schema"
-import { getBlogPosts } from "@/lib/actions/blog"
-import { format } from "date-fns"
+import { FaEye, FaHeart, FaClock, FaMagnifyingGlass, FaUser, FaCalendar } from "react-icons/fa6"
+import type { BlogPost, BlogPostQuery } from "@/lib/db/schema"
+import { getBlogPosts, getBlogCategories } from "@/lib/actions/blog"
+import { formatDistanceToNow, format } from "date-fns"
 
-interface BlogPostPageProps {
-  params: {
-    slug: string
-  }
-}
-
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const [post, setPost] = useState<BlogPost | null>(null)
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
+export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState<BlogPostQuery>({
+    page: 1,
+    limit: 12,
+    status: "published",
+    sortBy: "publishedAt",
+    sortOrder: "desc",
+  })
 
   useEffect(() => {
-    loadPost()
-  }, [params.slug])
+    loadPosts()
+    loadCategories()
+  }, [query])
 
-  const loadPost = async () => {
+  const loadPosts = async () => {
     try {
       setLoading(true)
-
-      // Find the specific post by slug
-      const result = await getBlogPosts({
-        page: 1,
-        limit: 100,
-        status: "published",
-      })
-
-      if (result.success && result.data) {
-        const foundPost = result.data.find(p => p.slug === params.slug)
-
-        if (!foundPost) {
-          notFound()
-          return
-        }
-
-        setPost(foundPost)
-
-        // Load related posts from the same category
-        const related = result.data.filter(p => p.id !== foundPost.id && p.category === foundPost.category).slice(0, 3)
-
-        setRelatedPosts(related)
+      const result = await getBlogPosts(query)
+      if (result.success) {
+        setPosts(result.data || [])
       }
     } catch (error) {
-      console.error("Error loading post:", error)
-      notFound()
+      console.error("Error loading posts:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleShare = async () => {
-    if (navigator.share && post) {
-      try {
-        await navigator.share({
-          title: post.title,
-          text: post.excerpt,
-          url: window.location.href,
-        })
-      } catch (error) {
-        console.log("Error sharing:", error)
+  const loadCategories = async () => {
+    try {
+      const result = await getBlogCategories({ page: 1, limit: 100 })
+      if (result.success && result.data) {
+        setCategories(result.data.map((cat) => cat.name))
       }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href)
-      // You could show a toast here
+    } catch (error) {
+      console.error("Error loading categories:", error)
     }
   }
+
+  const featuredPost = posts[0]
+  const regularPosts = posts.slice(1)
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="h-64 bg-gray-200 rounded-lg mb-8"></div>
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 mb-12"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+              <div className="h-64 bg-gray-200 rounded-lg"></div>
+              <div className="space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -99,207 +79,256 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     )
   }
 
-  if (!post) {
-    notFound()
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-8"
-        >
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <FaArrowLeft size={16} />
-            Back to Blog
-          </Link>
-        </motion.div>
-
-        {/* Article Header */}
-        <motion.article
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-lg shadow-sm overflow-hidden"
-        >
-          {/* Hero Section */}
-          <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <div className="text-white text-center p-8">
-              <Badge
-                variant="secondary"
-                className="mb-4"
-              >
-                {post.category}
-              </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
-              <p className="text-lg opacity-90 max-w-2xl">{post.excerpt}</p>
-            </div>
-          </div>
-
-          {/* Article Meta */}
-          <div className="p-6 border-b">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                  <FaUser
-                    className="text-gray-600"
-                    size={20}
-                  />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{post.authorName}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <FaCalendar size={12} />
-                      {post.publishedAt && format(new Date(post.publishedAt), "MMMM dd, yyyy")}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FaClock size={12} />
-                      {post.readingTime} min read
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <FaEye size={12} />
-                    {post.views} views
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <FaHeart size={12} />
-                    {post.likes} likes
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShare}
-                  >
-                    <FaShare size={14} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                  >
-                    <FaBookmark size={14} />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Article Content */}
-          <div className="p-6 md:p-8">
-            <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">{post.content}</div>
-            </div>
-
-            {/* Tags */}
-            <div className="mt-8 pt-6 border-t">
-              <div className="flex items-center gap-2 mb-4">
-                <FaTag
-                  className="text-gray-400"
-                  size={16}
-                />
-                <span className="text-sm font-medium text-gray-700">Tags:</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.article>
-
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <motion.div
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-12"
+            className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map(relatedPost => (
-                <Card
-                  key={relatedPost.id}
-                  className="hover:shadow-lg transition-shadow group"
-                >
-                  <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                    <div className="text-gray-400 text-center">
-                      <div className="w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center mb-2 mx-auto">
-                        <span className="text-lg">📝</span>
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <Badge
-                      variant="outline"
-                      className="mb-2"
-                    >
-                      {relatedPost.category}
-                    </Badge>
-                    <Link href={`/blog/${relatedPost.slug}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {relatedPost.title}
-                      </h3>
-                    </Link>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">{relatedPost.excerpt}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <FaClock size={10} />
-                        {relatedPost.readingTime} min
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FaEye size={10} />
-                        {relatedPost.views}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </motion.div>
-        )}
+            Our Blog
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-xl text-gray-600 max-w-2xl mx-auto"
+          >
+            Discover insights, tutorials, and stories from our team. Stay updated with the latest trends and best
+            practices.
+          </motion.p>
+        </div>
 
-        {/* Call to Action */}
+        {/* Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12"
+          transition={{ delay: 0.2 }}
+          className="mb-8"
         >
-          <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold mb-4">Enjoyed this article?</h3>
-              <p className="text-lg opacity-90 mb-6">Subscribe to our newsletter for more insights and updates.</p>
-              <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 px-4 py-2 rounded-lg text-gray-900"
-                />
-                <Button variant="secondary">Subscribe</Button>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <FaMagnifyingGlass
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <Input
+                      placeholder="Search articles..."
+                      value={query.search || ""}
+                      onChange={(e) => setQuery({ ...query, search: e.target.value || undefined, page: 1 })}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <Select
+                  value={query.category || "all"}
+                  onValueChange={(value) =>
+                    setQuery({ ...query, category: value === "all" ? undefined : value, page: 1 })
+                  }
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={`${query.sortBy}-${query.sortOrder}`}
+                  onValueChange={(value) => {
+                    const [sortBy, sortOrder] = value.split("-")
+                    setQuery({ ...query, sortBy: sortBy as any, sortOrder: sortOrder as any })
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="publishedAt-desc">Latest First</SelectItem>
+                    <SelectItem value="publishedAt-asc">Oldest First</SelectItem>
+                    <SelectItem value="views-desc">Most Popular</SelectItem>
+                    <SelectItem value="title-asc">Title A-Z</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        {posts.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center py-16"
+          >
+            <div className="text-gray-400 mb-4">
+              <FaMagnifyingGlass size={48} className="mx-auto" />
+            </div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No articles found</h3>
+            <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+          </motion.div>
+        ) : (
+          <>
+            {/* Featured Post */}
+            {featuredPost && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mb-12"
+              >
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                    <div className="aspect-video lg:aspect-square bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <div className="text-white text-center p-8">
+                        <h3 className="text-2xl font-bold mb-2">Featured Article</h3>
+                        <p className="opacity-90">Latest insights and updates</p>
+                      </div>
+                    </div>
+                    <CardContent className="p-8 flex flex-col justify-center">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Badge variant="secondary">{featuredPost.category}</Badge>
+                        <span className="text-sm text-gray-500">Featured</span>
+                      </div>
+                      <Link href={`/blog/${featuredPost.slug}`}>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4 hover:text-blue-600 transition-colors">
+                          {featuredPost.title}
+                        </h2>
+                      </Link>
+                      <p className="text-gray-600 mb-6 line-clamp-3">{featuredPost.excerpt}</p>
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <FaUser size={12} />
+                            {featuredPost.authorName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FaCalendar size={12} />
+                            {featuredPost.publishedAt && format(new Date(featuredPost.publishedAt), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <FaEye size={12} />
+                            {featuredPost.views}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FaHeart size={12} />
+                            {featuredPost.likes}
+                          </span>
+                        </div>
+                      </div>
+                      <Link href={`/blog/${featuredPost.slug}`}>
+                        <Button className="w-full">Read Full Article</Button>
+                      </Link>
+                    </CardContent>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Regular Posts Grid */}
+            {regularPosts.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {regularPosts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
+                  >
+                    <Card className="h-full hover:shadow-lg transition-shadow group">
+                      <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <div className="text-gray-400 text-center">
+                          <div className="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center mb-2 mx-auto">
+                            <span className="text-2xl">📝</span>
+                          </div>
+                          <p className="text-sm">Article Image</p>
+                        </div>
+                      </div>
+                      <CardContent className="p-6 flex flex-col flex-1">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge variant="outline">{post.category}</Badge>
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <FaClock size={10} />
+                            {post.readingTime} min read
+                          </span>
+                        </div>
+                        <Link href={`/blog/${post.slug}`}>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                            {post.title}
+                          </h3>
+                        </Link>
+                        <p className="text-gray-600 mb-4 line-clamp-3 flex-1">{post.excerpt}</p>
+                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                          <span className="flex items-center gap-1">
+                            <FaUser size={12} />
+                            {post.authorName}
+                          </span>
+                          <span>
+                            {post.publishedAt && formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <FaEye size={12} />
+                              {post.views}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <FaHeart size={12} />
+                              {post.likes}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {post.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {posts.length >= query.limit && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="text-center mt-12"
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setQuery({ ...query, limit: query.limit + 6 })}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Load More Articles"}
+                </Button>
+              </motion.div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
 }
+
