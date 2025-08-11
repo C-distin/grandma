@@ -1,21 +1,19 @@
 "use client"
 
-import { useState } from "react"
 import { motion } from "motion/react"
-import { FaList, FaPlus, FaChartLine, FaGear, FaArrowLeft, FaImage } from "react-icons/fa6"
-import { PostList } from "@/components/dashboard/PostList"
-import { CreatePost } from "@/components/dashboard/CreatePost"
-import { Analytics } from "@/components/dashboard/Analytics"
-import { Settings } from "@/components/dashboard/Settings"
-import type { BlogPost } from "@/lib/db/schema"
+import { useState } from "react"
+import { FaArrowLeft, FaChartLine, FaGear, FaImage, FaList, FaPlus } from "react-icons/fa6"
 import { toast } from "sonner"
+import { Analytics } from "@/components/dashboard/Analytics"
+import { CreatePost } from "@/components/dashboard/CreatePost"
+import { PostList } from "@/components/dashboard/PostList"
+import { Settings } from "@/components/dashboard/Settings"
 import { ImageUpload } from "@/components/gallery/ImageUpload"
 
 type TabType = "list" | "create" | "gallery" | "analytics" | "settings"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("list")
-  const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
 
   const tabs = [
     { id: "list" as TabType, name: "All Posts", icon: FaList },
@@ -25,34 +23,13 @@ export default function DashboardPage() {
     { id: "settings" as TabType, name: "Settings", icon: FaGear },
   ]
 
-  const handleCreatePost = () => {
-    setEditingPost(null)
-    setActiveTab("create")
-  }
-
-  const handleEditPost = (post: BlogPost) => {
-    setEditingPost(post)
-    setActiveTab("create")
-  }
-
-  const handlePostSaved = () => {
-    setActiveTab("list")
-    setEditingPost(null)
-    toast.success(editingPost ? "Post updated successfully!" : "Post created successfully!")
-  }
-
-  const handleCancelEdit = () => {
-    setActiveTab("list")
-    setEditingPost(null)
-  }
-
   const renderTabContent = () => {
     switch (activeTab) {
       case "list":
         return (
           <PostList
-            onCreateNew={handleCreatePost}
-            onEditPost={handleEditPost}
+            onCreateNew={}
+            onEditPost={}
           />
         )
       case "create":
@@ -105,10 +82,11 @@ export default function DashboardPage() {
                   <motion.button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${isActive
+                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      isActive
                         ? "border-blue-500 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                    }`}
                     whileHover={{ y: -1 }}
                     whileTap={{ y: 0 }}
                   >

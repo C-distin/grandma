@@ -1,8 +1,3 @@
-import type { BlogCategory as DBBlogCategory, BlogPost as DBBlogPost } from "@/lib/db/schema"
-
-export type BlogPost = DBBlogPost
-export type BlogCategory = DBBlogCategory
-
 export interface CreatePostData {
   title: string
   content: string

@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { motion } from "motion/react"
-import { FaFloppyDisk, FaPalette, FaTag } from "react-icons/fa6"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { FaFloppyDisk, FaTag } from "react-icons/fa6"
+import { z } from "zod"
 import type { BlogCategory } from "@/types/blog"
 
 const createCategorySchema = z.object({
@@ -105,12 +105,13 @@ export function CreateCategory({ editingCategory, onSave, onCancel }: CreateCate
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+        >
           {/* Category Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category Name *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category Name *</label>
             <input
               {...register("name")}
               type="text"
@@ -118,7 +119,7 @@ export function CreateCategory({ editingCategory, onSave, onCancel }: CreateCate
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-            
+
             {/* Slug Preview */}
             {watch("name") && (
               <div className="mt-2 text-sm text-gray-500">
@@ -129,9 +130,7 @@ export function CreateCategory({ editingCategory, onSave, onCancel }: CreateCate
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
               {...register("description")}
               rows={3}
@@ -143,10 +142,8 @@ export function CreateCategory({ editingCategory, onSave, onCancel }: CreateCate
 
           {/* Color Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              Category Color *
-            </label>
-            
+            <label className="block text-sm font-medium text-gray-700 mb-4">Category Color *</label>
+
             {/* Predefined Colors */}
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-3">Choose from predefined colors:</p>
@@ -201,7 +198,7 @@ export function CreateCategory({ editingCategory, onSave, onCancel }: CreateCate
                 <span
                   className="px-3 py-1 text-sm font-medium rounded-full"
                   style={{
-                    backgroundColor: watchedColor + "20",
+                    backgroundColor: `${watchedColor}20`,
                     color: watchedColor,
                   }}
                 >

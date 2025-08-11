@@ -1,16 +1,16 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FaImage, FaUpload, FaX } from "react-icons/fa6"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { FaUpload, FaImage, FaX } from "react-icons/fa6"
-import { UploadDropzone } from "@/lib/uploadthing-client"
 import { createGalleryImage } from "@/lib/actions/gallery"
-import { toast } from "sonner"
-import Image from "next/image"
+import { UploadDropzone } from "@/lib/uploadthing-client"
 
 interface ImageUploadProps {
   onUploadComplete?: (urls: string[]) => void

@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { formatDistanceToNow } from "date-fns"
 import { motion } from "motion/react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import Image from "next/image"
+import { useEffect, useState } from "react"
+import { FaCalendar, FaDownload, FaExpand, FaEye, FaMagnifyingGlass } from "react-icons/fa6"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -14,11 +16,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { FaMagnifyingGlass, FaDownload, FaEye, FaCalendar, FaExpand } from "react-icons/fa6"
+import { Input } from "@/components/ui/input"
 import { getGalleryImages } from "@/lib/actions/gallery"
 import type { GalleryImage, GalleryImageQuery } from "@/lib/db/schema"
-import { formatDistanceToNow } from "date-fns"
-import Image from "next/image"
 
 export function ImageGallery() {
   const [images, setImages] = useState<GalleryImage[]>([])
@@ -29,7 +29,7 @@ export function ImageGallery() {
 
   useEffect(() => {
     loadImages()
-  }, [])
+  }, [loadImages])
 
   const loadImages = async () => {
     try {
@@ -80,7 +80,7 @@ export function ImageGallery() {
     const k = 1024
     const sizes = ["Bytes", "KB", "MB", "GB"]
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+    return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`
   }
 
   const downloadImage = async (url: string, filename: string) => {

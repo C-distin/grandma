@@ -1,19 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "motion/react"
-import {
-  FaPlus,
-  FaPenToSquare,
-  FaTrash,
-  FaMagnifyingGlass,
-  FaSort,
-  FaTag,
-  FaCalendar,
-} from "react-icons/fa6"
-import { BlogCategory } from "@/types/blog"
-import { getAllBlogCategories, deleteBlogCategory } from "@/lib/actions/categories"
+import { motion } from "motion/react"
+import { useEffect, useState } from "react"
+import { FaCalendar, FaMagnifyingGlass, FaPenToSquare, FaPlus, FaTag, FaTrash } from "react-icons/fa6"
 import { toast } from "sonner"
+import { deleteBlogCategory } from "@/lib/actions/categories"
+import type { BlogCategory } from "@/types/blog"
 
 interface CategoryListProps {
   onCreateNew: () => void
@@ -48,8 +40,8 @@ export function CategoryList({ onCreateNew, onEditCategory }: CategoryListProps)
     loadCategories()
   }, [sortBy])
 
-  const filteredCategories = categories.filter(category =>
-    !searchTerm || category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories.filter(
+    category => !searchTerm || category.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleDeleteCategory = async (categoryId: string) => {
@@ -100,7 +92,10 @@ export function CategoryList({ onCreateNew, onEditCategory }: CategoryListProps)
             <p className="text-sm text-gray-600">Total Categories</p>
             <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
           </div>
-          <FaTag className="text-blue-500" size={24} />
+          <FaTag
+            className="text-blue-500"
+            size={24}
+          />
         </div>
       </div>
 
@@ -150,12 +145,13 @@ export function CategoryList({ onCreateNew, onEditCategory }: CategoryListProps)
       <div className="space-y-4">
         {filteredCategories.length === 0 ? (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
-            <FaTag className="mx-auto text-gray-400 mb-4" size={48} />
+            <FaTag
+              className="mx-auto text-gray-400 mb-4"
+              size={48}
+            />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No categories found</h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm
-                ? "Try adjusting your search terms."
-                : "Get started by creating your first blog category."}
+              {searchTerm ? "Try adjusting your search terms." : "Get started by creating your first blog category."}
             </p>
             <button
               type="button"
@@ -212,9 +208,7 @@ export function CategoryList({ onCreateNew, onEditCategory }: CategoryListProps)
                     <FaCalendar size={10} />
                     {formatDate(category.createdAt)}
                   </span>
-                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                    {category.slug}
-                  </span>
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full">{category.slug}</span>
                 </div>
               </motion.div>
             ))}

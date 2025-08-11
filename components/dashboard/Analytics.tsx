@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FaChartLine, FaEye, FaHeart, FaArrowUp, FaCalendar, FaArrowDown, FaFile } from "react-icons/fa6"
+import { formatDistanceToNow } from "date-fns"
+import { useEffect, useState } from "react"
 import { FaArchive } from "react-icons/fa"
+import { FaArrowDown, FaArrowUp, FaCalendar, FaChartLine, FaEye, FaFile, FaHeart } from "react-icons/fa6"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getBlogPosts } from "@/lib/actions/blog"
 import type { BlogPost } from "@/lib/db/schema"
-import { formatDistanceToNow } from "date-fns"
 
 export function Analytics() {
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -15,7 +15,7 @@ export function Analytics() {
 
   useEffect(() => {
     loadAnalytics()
-  }, [])
+  }, [loadAnalytics])
 
   const loadAnalytics = async () => {
     try {

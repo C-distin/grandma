@@ -1,14 +1,10 @@
 "use client"
 
+import { formatDistanceToNow } from "date-fns"
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { FaPlus, FaPenToSquare, FaTrash, FaGear, FaBoxArchive, FaEye, FaRotateLeft } from "react-icons/fa6"
+import { useEffect, useState } from "react"
+import { FaBoxArchive, FaEye, FaGear, FaPenToSquare, FaPlus, FaRotateLeft, FaTrash } from "react-icons/fa6"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,19 +16,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import type { BlogCategory, BlogPost } from "@/lib/db/schema"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
-  getBlogCategories,
   createBlogCategory,
-  updateBlogCategory,
   deleteBlogCategory,
-  getBlogPosts,
   deleteBlogPost,
+  getBlogCategories,
+  getBlogPosts,
   restoreBlogPost,
+  updateBlogCategory,
 } from "@/lib/actions/blog"
-import { toast } from "sonner"
-import { formatDistanceToNow } from "date-fns"
+import type { BlogCategory, BlogPost } from "@/lib/db/schema"
 
 export function Settings() {
   const [categories, setCategories] = useState<BlogCategory[]>([])
@@ -51,7 +50,7 @@ export function Settings() {
   useEffect(() => {
     loadCategories()
     loadArchivedPosts()
-  }, [])
+  }, [loadArchivedPosts, loadCategories])
 
   const loadCategories = async () => {
     try {

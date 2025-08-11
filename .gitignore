@@ -46,3 +46,6 @@ package-lock.json
 
 # supabase
 /supabase
+
+# jujutsu
+.jj

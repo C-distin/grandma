@@ -1,29 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { formatDistanceToNow } from "date-fns"
 import { motion } from "motion/react"
+import { useEffect, useState } from "react"
 import {
-  FaPlus,
-  FaPenToSquare,
-  FaTrash,
+  FaBoxArchive,
+  FaClock,
   FaEye,
   FaHeart,
-  FaClock,
   FaMagnifyingGlass,
-  FaBoxArchive,
+  FaPenToSquare,
+  FaPlus,
+  FaTrash,
 } from "react-icons/fa6"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,10 +25,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { archiveBlogPost, deleteBlogPost, getBlogPosts } from "@/lib/actions/blog"
 import type { BlogPost, BlogPostQuery } from "@/lib/db/schema"
-import { getBlogPosts, deleteBlogPost, archiveBlogPost } from "@/lib/actions/blog"
-import { toast } from "sonner"
-import { formatDistanceToNow } from "date-fns"
 
 interface PostListProps {
   onCreateNew: () => void
@@ -57,7 +57,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
 
   useEffect(() => {
     loadPosts()
-  }, [query])
+  }, [loadPosts])
 
   const loadPosts = async () => {
     try {

@@ -1,8 +1,8 @@
 "use client"
 
 import { motion } from "motion/react"
+import { FaChartLine, FaGear, FaList, FaPlus } from "react-icons/fa6"
 import { Card, CardContent } from "@/components/ui/card"
-import { FaList, FaPlus, FaChartLine, FaGear } from "react-icons/fa6"
 
 export default function DashboardLoading() {
   const tabs = [

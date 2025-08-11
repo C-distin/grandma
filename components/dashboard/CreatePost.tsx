@@ -1,19 +1,21 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { FaSave, FaTimes, FaTag } from "react-icons/fa"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import type { BlogPost } from "@/lib/db/schema"
-import { createBlogPost, updateBlogPost, getBlogCategories } from "@/lib/actions/blog"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { FaSave, FaTag, FaTimes } from "react-icons/fa"
 import { toast } from "sonner"
+import { Tiptap } from "@/components/dashboard/Tiptap"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { createBlogPost, getBlogCategories, updateBlogPost } from "@/lib/actions/blog"
+import type { BlogPost } from "@/lib/validation/blog"
+import { blogPostSchema } from "@/lib/validation/blog"
 
 interface CreatePostProps {
   editingPost: BlogPost | null
@@ -22,6 +24,18 @@ interface CreatePostProps {
 }
 
 export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) {
+  const _form = useForm<BlogPost>({
+    resolver: zodResolver(blogPostSchema),
+    defaultValues: {
+      title: "",
+      excerpt: "",
+      content: "",
+      featuredImage: "",
+      categoryId: "",
+      tags: [],
+      status: "draft",
+    },
+  })
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
@@ -50,7 +64,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
         featuredImage: null,
       })
     }
-  }, [editingPost])
+  }, [editingPost, loadCategories])
 
   const loadCategories = async () => {
     try {
@@ -220,6 +234,14 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
 
                 <div>
                   <Label htmlFor="content">Content *</Label>
+                  <Tiptap
+                    content={formData.content}
+                    onChange={content => setFormData(prev => ({ ...prev, content }))}
+                  />
+                </div>
+
+                {/*<div>
+                  <Label htmlFor="content">Content *</Label>
                   <Textarea
                     id="content"
                     value={formData.content}
@@ -228,7 +250,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                     rows={15}
                     required
                   />
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>
