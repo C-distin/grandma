@@ -15,10 +15,7 @@ export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadPosts()
-  }, [loadPosts])
-
+  // Declare loadPosts function before useEffect
   async function loadPosts() {
     try {
       setLoading(true)
@@ -30,6 +27,11 @@ export default function BlogPage() {
       setLoading(false)
     }
   }
+
+  // Run once on mount
+  useEffect(() => {
+    loadPosts()
+  }, [])
 
   if (loading) {
     return (

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { BlogPost } from "@/lib/validation/blog"
+import { toast } from "sonner"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -25,20 +26,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
   const [loading, setLoading] = useState(true)
   const [slug, setSlug] = useState<string>("")
 
-  useEffect(() => {
-    const getParams = async () => {
-      const resolvedParams = await params
-      setSlug(resolvedParams.slug)
-    }
-    getParams()
-  }, [params])
-
-  useEffect(() => {
-    if (slug) {
-      loadPost()
-    }
-  }, [slug, loadPost])
-
+  // Load post data by slug
   const loadPost = async () => {
     try {
       setLoading(true)
@@ -51,7 +39,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
 
       setPost(foundPost)
 
-      // Load related posts (just get other published posts)
+      // Load related posts (exclude current)
       const allPosts = await getPublishedPosts(10)
       const related = allPosts.filter(p => p.id !== foundPost.id).slice(0, 3)
       setRelatedPosts(related)
@@ -62,6 +50,22 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
       setLoading(false)
     }
   }
+
+  // Resolve slug from params on mount
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params
+      setSlug(resolvedParams.slug)
+    }
+    getParams()
+  }, [params])
+
+  // Load post when slug changes
+  useEffect(() => {
+    if (slug) {
+      loadPost()
+    }
+  }, [slug])
 
   const handleShare = async () => {
     if (navigator.share && post) {
@@ -77,6 +81,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
+      toast.success("URL copied to clipboard")
     }
   }
 
@@ -179,11 +184,11 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <FaEye size={12} />
-                    {post.views} views
+                    {post.views}
                   </span>
                   <span className="flex items-center gap-1">
                     <FaHeart size={12} />
-                    {post.likes} likes
+                    {post.likes}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -208,7 +213,11 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           {/* Article Content */}
           <div className="p-6 md:p-8">
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">{post.content}</div>
+              {/* Render content as HTML */}
+              <div
+                className="whitespace-pre-wrap text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
             </div>
           </div>
         </motion.article>
