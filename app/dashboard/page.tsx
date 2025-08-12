@@ -56,9 +56,6 @@ export default function DashboardPage() {
   const tabs = [
     { id: "list" as TabType, name: "All Posts", icon: FaList },
     { id: "create" as TabType, name: "Create Post", icon: FaPlus },
-    { id: "gallery" as TabType, name: "Gallery", icon: FaImage },
-    { id: "analytics" as TabType, name: "Analytics", icon: FaChartLine },
-    { id: "settings" as TabType, name: "Settings", icon: FaGear },
   ]
 
   const renderTabContent = () => {
@@ -80,10 +77,6 @@ export default function DashboardPage() {
             onCancel={handleCancelEdit}
           />
         )
-      case "settings":
-        return <Settings />
-      case "gallery":
-        return <ImageUpload />
       default:
         return null
     }
