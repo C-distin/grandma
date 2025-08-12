@@ -1,19 +1,57 @@
 "use client"
 
 import { motion } from "motion/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FaArrowLeft, FaChartLine, FaGear, FaImage, FaList, FaPlus } from "react-icons/fa6"
 import { toast } from "sonner"
-import { Analytics } from "@/components/dashboard/Analytics"
 import { CreatePost } from "@/components/dashboard/CreatePost"
 import { PostList } from "@/components/dashboard/PostList"
-import { Settings } from "@/components/dashboard/Settings"
-import { ImageUpload } from "@/components/gallery/ImageUpload"
+import { getFeaturedPosts, deletePost } from "@/actions/blog"
 
 type TabType = "list" | "create" | "gallery" | "analytics" | "settings"
+type PostType = Awaited<ReturnType<typeof getFeaturedPosts>>[number]
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("list")
+  const [posts, setPosts] = useState<PostType[]>([])
+  const [editingPost, setEditingPost] = useState<PostType | null>(null)
+
+  // Fetch posts on mount
+  useEffect(() => {
+    loadPosts()
+  }, [])
+
+  async function loadPosts() {
+    const data = await getFeaturedPosts(50)
+    setPosts(data)
+  }
+
+  function handleCreateNew() {
+    setEditingPost(null)
+    setActiveTab("create")
+  }
+
+  function handleEditPost(post: PostType) {
+    setEditingPost(post)
+    setActiveTab("create")
+  }
+
+  async function handleDeletePost(id: string) {
+    await deletePost(id)
+    toast.success("Post deleted")
+    loadPosts()
+  }
+
+  async function handlePostSaved() {
+    toast.success("Post saved successfully")
+    setActiveTab("list")
+    loadPosts()
+  }
+
+  function handleCancelEdit() {
+    setActiveTab("list")
+    setEditingPost(null)
+  }
 
   const tabs = [
     { id: "list" as TabType, name: "All Posts", icon: FaList },
@@ -28,8 +66,10 @@ export default function DashboardPage() {
       case "list":
         return (
           <PostList
-            onCreateNew={}
-            onEditPost={}
+            posts={posts}
+            onCreateNew={handleCreateNew}
+            onEditPost={handleEditPost}
+            onDeletePost={handleDeletePost}
           />
         )
       case "create":
@@ -40,8 +80,6 @@ export default function DashboardPage() {
             onCancel={handleCancelEdit}
           />
         )
-      case "analytics":
-        return <Analytics />
       case "settings":
         return <Settings />
       case "gallery":

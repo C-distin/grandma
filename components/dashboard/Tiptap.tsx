@@ -7,7 +7,7 @@ import Image from "@tiptap/extension-image"
 import { createClient } from "@supabase/supabase-js"
 import { toast, Toaster } from "sonner"
 
-export function RichTextEditor() {
+export function Tiptap() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
 
@@ -45,7 +45,7 @@ export function RichTextEditor() {
       setProgress(0)
 
       const fileName = `${Date.now()}-${file.name}`
-      const { data, error } = await supabase.storage.from("editor-images").upload(fileName, file, {
+      const { data, error } = await supabase.storage.from("blog-images").upload(fileName, file, {
         upsert: false,
       })
 

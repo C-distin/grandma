@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from "date-fns"
 import { motion } from "motion/react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import {
   FaBoxArchive,
   FaClock,
@@ -37,8 +37,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { archiveBlogPost, deleteBlogPost, getBlogPosts } from "@/lib/actions/blog"
-import type { BlogPost, BlogPostQuery } from "@/lib/db/schema"
+import { type BlogPost, blogPostSchema } from "@/lib/validation/blog"
+
+// Import your server actions
+import { getAllPosts, deletePost, updatePost } from "@/actions/blog"
 
 interface PostListProps {
   onCreateNew: () => void
@@ -48,23 +50,14 @@ interface PostListProps {
 export function PostList({ onCreateNew, onEditPost }: PostListProps) {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState<BlogPostQuery>({
-    page: 1,
-    limit: 10,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  })
 
-  useEffect(() => {
-    loadPosts()
-  }, [loadPosts])
-
-  const loadPosts = async () => {
+  // Load posts (wrapped in useCallback to avoid unnecessary re-renders)
+  const loadPosts = useCallback(async () => {
     try {
       setLoading(true)
-      const result = await getBlogPosts(query)
-      if (result.success) {
-        setPosts(result.data || [])
+      const result = await getAllPosts()
+      if (Array.isArray(result)) {
+        setPosts(result)
       } else {
         toast.error("Failed to load posts")
       }
@@ -74,17 +67,17 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadPosts()
+  }, [loadPosts])
 
   const handleDeletePost = async (postId: string) => {
     try {
-      const result = await deleteBlogPost(postId)
-      if (result.success) {
-        toast.success("Post deleted successfully")
-        loadPosts()
-      } else {
-        toast.error(result.error || "Failed to delete post")
-      }
+      await deletePost(postId)
+      toast.success("Post deleted successfully")
+      loadPosts()
     } catch (error) {
       console.error("Error deleting post:", error)
       toast.error("An error occurred while deleting the post")
@@ -93,13 +86,9 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
 
   const handleArchivePost = async (postId: string) => {
     try {
-      const result = await archiveBlogPost(postId)
-      if (result.success) {
-        toast.success("Post archived successfully")
-        loadPosts()
-      } else {
-        toast.error(result.error || "Failed to archive post")
-      }
+      await updatePost(postId, { status: "archived" })
+      toast.success("Post archived successfully")
+      loadPosts()
     } catch (error) {
       console.error("Error archiving post:", error)
       toast.error("An error occurred while archiving the post")
@@ -141,7 +130,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with Create Button */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">All Posts</h2>
@@ -151,69 +140,11 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
           onClick={onCreateNew}
           className="flex items-center gap-2"
         >
-          <FaPlus size={16} />
-          Create New Post
+          <FaPlus size={16} /> Create New Post
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <FaMagnifyingGlass
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={16}
-                />
-                <Input
-                  placeholder="Search posts..."
-                  value={query.search || ""}
-                  onChange={e => setQuery({ ...query, search: e.target.value || undefined, page: 1 })}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select
-              value={query.status || "all"}
-              onValueChange={value =>
-                setQuery({ ...query, status: value === "all" ? undefined : (value as any), page: 1 })
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={`${query.sortBy}-${query.sortOrder}`}
-              onValueChange={value => {
-                const [sortBy, sortOrder] = value.split("-")
-                setQuery({ ...query, sortBy: sortBy as any, sortOrder: sortOrder as any })
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                <SelectItem value="title-asc">Title A-Z</SelectItem>
-                <SelectItem value="title-desc">Title Z-A</SelectItem>
-                <SelectItem value="views-desc">Most Views</SelectItem>
-                <SelectItem value="likes-desc">Most Likes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Posts List */}
+      {/* Posts */}
       {posts.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
@@ -227,7 +158,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
               <FaPlus
                 className="mr-2"
                 size={16}
-              />
+              />{" "}
               Create Your First Post
             </Button>
           </CardContent>
@@ -246,7 +177,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer">
+                        <h3
+                          className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer"
+                          onClick={() => onEditPost(post)}
+                        >
                           {post.title}
                         </h3>
                         <Badge className={getStatusColor(post.status)}>{post.status}</Badge>
@@ -258,12 +192,10 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                           {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                         </span>
                         <span className="flex items-center gap-1">
-                          <FaEye size={12} />
-                          {post.views} views
+                          <FaEye size={12} /> {post.views} views
                         </span>
                         <span className="flex items-center gap-1">
-                          <FaHeart size={12} />
-                          {post.likes} likes
+                          <FaHeart size={12} /> {post.likes} likes
                         </span>
                         <span>{post.readingTime} min read</span>
                       </div>
@@ -293,7 +225,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                                 <FaBoxArchive
                                   className="mr-2"
                                   size={14}
-                                />
+                                />{" "}
                                 Archive Post
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
@@ -308,7 +240,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                                 <FaTrash
                                   className="mr-2"
                                   size={14}
-                                />
+                                />{" "}
                                 Delete Post
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
@@ -336,7 +268,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">{post.category}</Badge>
-                    {post.tags.slice(0, 3).map(tag => (
+                    {post.tags?.slice(0, 3).map(tag => (
                       <Badge
                         key={tag}
                         variant="outline"
@@ -345,7 +277,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                         {tag}
                       </Badge>
                     ))}
-                    {post.tags.length > 3 && (
+                    {post.tags?.length > 3 && (
                       <Badge
                         variant="outline"
                         className="text-xs"

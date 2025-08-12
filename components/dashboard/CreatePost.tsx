@@ -1,21 +1,20 @@
 "use client"
 
+import React, { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { FaSave, FaTag, FaTimes } from "react-icons/fa"
+import { FaSave, FaTimes } from "react-icons/fa"
 import { toast } from "sonner"
 import { Tiptap } from "@/components/dashboard/Tiptap"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { createBlogPost, getBlogCategories, updateBlogPost } from "@/lib/actions/blog"
 import type { BlogPost } from "@/lib/validation/blog"
 import { blogPostSchema } from "@/lib/validation/blog"
+import { createPost, updatePost } from "@/actions/blog"
 
 interface CreatePostProps {
   editingPost: BlogPost | null
@@ -23,7 +22,10 @@ interface CreatePostProps {
   onCancel: () => void
 }
 
+type Status = "draft" | "published" | "archived"
+
 export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) {
+  // keep the form resolver in case you wire validation later
   const _form = useForm<BlogPost>({
     resolver: zodResolver(blogPostSchema),
     defaultValues: {
@@ -31,60 +33,41 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
       excerpt: "",
       content: "",
       featuredImage: "",
-      categoryId: "",
-      tags: [],
       status: "draft",
     },
   })
+
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     excerpt: "",
     content: "",
-    category: "",
-    tags: [] as string[],
-    status: "draft" as "draft" | "published" | "archived",
+    status: "draft" as Status,
     featuredImage: null as File | null,
   })
-  const [tagInput, setTagInput] = useState("")
-  const [categories, setCategories] = useState<string[]>([])
+
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    loadCategories()
     if (editingPost) {
       setFormData({
         title: editingPost.title,
         slug: editingPost.slug,
         excerpt: editingPost.excerpt,
         content: editingPost.content,
-        category: editingPost.category,
-        tags: editingPost.tags,
-        status: editingPost.status as any,
+        status: editingPost.status as Status,
         featuredImage: null,
       })
     }
-  }, [editingPost, loadCategories])
+  }, [editingPost])
 
-  const loadCategories = async () => {
-    try {
-      const result = await getBlogCategories({ page: 1, limit: 100 })
-      if (result.success && result.data) {
-        setCategories(result.data.map(cat => cat.name))
-      }
-    } catch (error) {
-      console.error("Error loading categories:", error)
-    }
-  }
-
-  const generateSlug = (title: string) => {
-    return title
+  const generateSlug = (title: string) =>
+    title
       .toLowerCase()
       .replace(/[^a-z0-9 -]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
       .trim()
-  }
 
   const handleTitleChange = (title: string) => {
     setFormData(prev => ({
@@ -94,24 +77,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
     }))
   }
 
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }))
-      setTagInput("")
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove),
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim()) {
@@ -119,38 +85,27 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
       return
     }
 
-    if (formData.tags.length === 0) {
-      toast.error("Please add at least one tag")
-      return
-    }
-
     setLoading(true)
     try {
-      const submitData = new FormData()
-      submitData.append("title", formData.title)
-      submitData.append("slug", formData.slug)
-      submitData.append("excerpt", formData.excerpt)
-      submitData.append("content", formData.content)
-      submitData.append("category", formData.category)
-      submitData.append("tags", JSON.stringify(formData.tags))
-      submitData.append("status", formData.status)
-
-      if (formData.featuredImage) {
-        submitData.append("featuredImage", formData.featuredImage)
+      // NOTE: URL.createObjectURL produces a temporary blob URL.
+      // If you want permanent storage, you should upload to storage (Supabase, S3, etc.)
+      const payload = {
+        title: formData.title,
+        slug: formData.slug,
+        excerpt: formData.excerpt,
+        content: formData.content,
+        featuredImage: formData.featuredImage ? URL.createObjectURL(formData.featuredImage) : undefined,
+        status: formData.status,
       }
 
-      let result
       if (editingPost) {
-        result = await updateBlogPost(editingPost.id, submitData)
+        await updatePost(editingPost.id, payload)
       } else {
-        result = await createBlogPost(submitData)
+        await createPost(payload)
       }
 
-      if (result.success) {
-        onSaved()
-      } else {
-        toast.error(result.error || "Failed to save post")
-      }
+      toast.success("Post saved successfully!")
+      onSaved()
     } catch (error) {
       console.error("Error saving post:", error)
       toast.error("An unexpected error occurred")
@@ -174,8 +129,10 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
             />
             Cancel
           </Button>
+          {/* Save as submit button — form's onSubmit handles it */}
           <Button
-            onClick={handleSubmit}
+            type="submit"
+            form="post-form"
             disabled={loading}
           >
             <FaSave
@@ -188,6 +145,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
       </div>
 
       <form
+        id="post-form"
         onSubmit={handleSubmit}
         className="space-y-6"
       >
@@ -239,18 +197,6 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                     onChange={content => setFormData(prev => ({ ...prev, content }))}
                   />
                 </div>
-
-                {/*<div>
-                  <Label htmlFor="content">Content *</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="Write your post content here..."
-                    rows={15}
-                    required
-                  />
-                </div> */}
               </CardContent>
             </Card>
           </div>
@@ -266,10 +212,10 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}
+                    onValueChange={(value: Status) => setFormData(prev => ({ ...prev, status: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={formData.status} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
@@ -280,78 +226,18 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem
-                          key={category}
-                          value={category}
-                        >
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
                   <Label htmlFor="featuredImage">Featured Image</Label>
                   <Input
                     id="featuredImage"
                     type="file"
                     accept="image/*"
-                    onChange={e =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setFormData(prev => ({
                         ...prev,
-                        featuredImage: e.target.files?.[0] || null,
+                        featuredImage: e.target.files?.[0] ?? null,
                       }))
                     }
                   />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FaTag size={16} />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    placeholder="Add a tag..."
-                    onKeyPress={e => e.key === "Enter" && (e.preventDefault(), addTag())}
-                  />
-                  <Button
-                    type="button"
-                    onClick={addTag}
-                    size="sm"
-                  >
-                    Add
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map(tag => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="cursor-pointer hover:bg-red-100"
-                      onClick={() => removeTag(tag)}
-                    >
-                      {tag} ×
-                    </Badge>
-                  ))}
                 </div>
               </CardContent>
             </Card>
