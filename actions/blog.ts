@@ -2,74 +2,106 @@
 
 import { db } from "@/lib/db"
 import { blogPosts } from "@/lib/db/schema"
-import { eq, and, isNotNull } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-)
-
-/**
- * Upload image to Supabase Storage and return public URL
- */
-async function uploadImage(file: File): Promise<string> {
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${crypto.randomUUID()}.${fileExt}`
-  const { data, error } = await supabase.storage.from("blog-images").upload(fileName, file, {
-    cacheControl: "3600",
-    upsert: false,
-  })
-
-  if (error) {
-    throw new Error(`Image upload failed: ${error.message}`)
-  }
-
-  const { data: publicUrlData } = supabase.storage.from("blog-images").getPublicUrl(data.path)
-
-  return publicUrlData.publicUrl
-}
+import type { BlogPost } from "@/lib/validation/blog"
 
 /**
  * Fetch all posts
  */
-export async function getAllPosts() {
-  return await db.select().from(blogPosts).orderBy(blogPosts.createdAt)
+export async function getAllPosts(): Promise<BlogPost[]> {
+  try {
+    const result = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt))
+    
+    return result.map(post => ({
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      content: post.content,
+      featuredImage: post.featuredImage || undefined,
+      authorName: post.authorName,
+      authorAvatar: post.authorAvatar || undefined,
+      readingTime: post.readingTime,
+      views: post.views,
+      likes: post.likes,
+      publishedAt: post.publishedAt || undefined,
+      status: post.status,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+    }))
+  } catch (error) {
+    console.error("Error fetching posts:", error)
+    return []
+  }
 }
 
 /**
  * Fetch post by slug
  */
-export async function getPostBySlug(slug: string) {
-  const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1)
-  return post
+export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  try {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1)
+    
+    if (!post) return null
+    
+    return {
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      content: post.content,
+      featuredImage: post.featuredImage || undefined,
+      authorName: post.authorName,
+      authorAvatar: post.authorAvatar || undefined,
+      readingTime: post.readingTime,
+      views: post.views,
+      likes: post.likes,
+      publishedAt: post.publishedAt || undefined,
+      status: post.status,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+    }
+  } catch (error) {
+    console.error("Error fetching post by slug:", error)
+    return null
+  }
 }
 
 /**
- * Fetch featured posts (published + has image)
+ * Fetch published posts
  */
-export async function getFeaturedPosts(limit: number = 5) {
-  return await db
-    .select()
-    .from(blogPosts)
-    .where(and(eq(blogPosts.status, "published"), isNotNull(blogPosts.featuredImage)))
-    .orderBy(blogPosts.createdAt)
-    .limit(limit)
-}
-
-/**
- * Fetch archived posts
- */
-export async function getArchivedPosts() {
-  return await db.select().from(blogPosts).where(eq(blogPosts.status, "archived")).orderBy(blogPosts.createdAt)
-}
-
-/**
- * Fetch draft posts
- */
-export async function getDraftPosts() {
-  return await db.select().from(blogPosts).where(eq(blogPosts.status, "draft")).orderBy(blogPosts.createdAt)
+export async function getPublishedPosts(limit?: number): Promise<BlogPost[]> {
+  try {
+    let query = db.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(desc(blogPosts.publishedAt))
+    
+    if (limit) {
+      query = query.limit(limit) as any
+    }
+    
+    const result = await query
+    
+    return result.map(post => ({
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      content: post.content,
+      featuredImage: post.featuredImage || undefined,
+      authorName: post.authorName,
+      authorAvatar: post.authorAvatar || undefined,
+      readingTime: post.readingTime,
+      views: post.views,
+      likes: post.likes,
+      publishedAt: post.publishedAt || undefined,
+      status: post.status,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+    }))
+  } catch (error) {
+    console.error("Error fetching published posts:", error)
+    return []
+  }
 }
 
 /**
@@ -80,25 +112,28 @@ export async function createPost(data: {
   slug: string
   excerpt: string
   content: string
-  featuredImageFile?: File
+  featuredImage?: string
   status?: "draft" | "published" | "archived"
-}) {
-  let imageUrl: string | undefined
+}): Promise<void> {
+  try {
+    const publishedAt = data.status === "published" ? new Date() : null
+    
+    await db.insert(blogPosts).values({
+      title: data.title,
+      slug: data.slug,
+      excerpt: data.excerpt,
+      content: data.content,
+      featuredImage: data.featuredImage,
+      status: data.status ?? "draft",
+      publishedAt,
+    })
 
-  if (data.featuredImageFile) {
-    imageUrl = await uploadImage(data.featuredImageFile)
+    revalidatePath("/dashboard")
+    revalidatePath("/blog")
+  } catch (error) {
+    console.error("Error creating post:", error)
+    throw new Error("Failed to create post")
   }
-
-  await db.insert(blogPosts).values({
-    title: data.title,
-    slug: data.slug,
-    excerpt: data.excerpt,
-    content: data.content,
-    featuredImage: imageUrl,
-    status: data.status ?? "draft",
-  })
-
-  revalidatePath("/dashboard/blog")
 }
 
 /**
@@ -111,32 +146,47 @@ export async function updatePost(
     slug: string
     excerpt: string
     content: string
-    featuredImageFile: File
+    featuredImage: string
     status: "draft" | "published" | "archived"
   }>
-) {
-  let imageUrl: string | undefined
-
-  if (data.featuredImageFile) {
-    imageUrl = await uploadImage(data.featuredImageFile)
-  }
-
-  await db
-    .update(blogPosts)
-    .set({
+): Promise<void> {
+  try {
+    const updateData: any = {
       ...data,
-      featuredImage: imageUrl ?? undefined,
       updatedAt: new Date(),
-    })
-    .where(eq(blogPosts.id, id))
+    }
+    
+    // Set publishedAt when publishing for the first time
+    if (data.status === "published") {
+      const [existingPost] = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1)
+      if (existingPost && !existingPost.publishedAt) {
+        updateData.publishedAt = new Date()
+      }
+    }
 
-  revalidatePath("/dashboard/blog")
+    await db
+      .update(blogPosts)
+      .set(updateData)
+      .where(eq(blogPosts.id, id))
+
+    revalidatePath("/dashboard")
+    revalidatePath("/blog")
+  } catch (error) {
+    console.error("Error updating post:", error)
+    throw new Error("Failed to update post")
+  }
 }
 
 /**
  * Delete post
  */
-export async function deletePost(id: string) {
-  await db.delete(blogPosts).where(eq(blogPosts.id, id))
-  revalidatePath("/dashboard/blog")
+export async function deletePost(id: string): Promise<void> {
+  try {
+    await db.delete(blogPosts).where(eq(blogPosts.id, id))
+    revalidatePath("/dashboard")
+    revalidatePath("/blog")
+  } catch (error) {
+    console.error("Error deleting post:", error)
+    throw new Error("Failed to delete post")
+  }
 }

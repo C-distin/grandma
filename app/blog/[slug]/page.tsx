@@ -5,12 +5,12 @@ import { motion } from "motion/react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaBookmark, FaCalendar, FaClock, FaEye, FaHeart, FaShare, FaTag, FaUser } from "react-icons/fa6"
+import { FaArrowLeft, FaBookmark, FaCalendar, FaClock, FaEye, FaHeart, FaShare, FaUser } from "react-icons/fa6"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getAllPosts } from "@/actions/blog"
-import type { blogPosts } from "@/lib/db/schema"
+import { getPostBySlug, getPublishedPosts } from "@/actions/blog"
+import type { BlogPost } from "@/lib/validation/blog"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -36,34 +36,24 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     if (slug) {
       loadPost()
     }
-  }, [slug, loadPost])
+  }, [slug])
 
   const loadPost = async () => {
     try {
       setLoading(true)
 
-      // Find the specific post by slug
-      const result = await getBlogPosts({
-        page: 1,
-        limit: 100,
-        status: "published",
-      })
-
-      if (result.success && result.data) {
-        const foundPost = result.data.find(p => p.slug === slug)
-
-        if (!foundPost) {
-          notFound()
-          return
-        }
-
-        setPost(foundPost)
-
-        // Load related posts from the same category
-        const related = result.data.filter(p => p.id !== foundPost.id && p.category === foundPost.category).slice(0, 3)
-
-        setRelatedPosts(related)
+      const foundPost = await getPostBySlug(slug)
+      if (!foundPost) {
+        notFound()
+        return
       }
+
+      setPost(foundPost)
+
+      // Load related posts (just get other published posts)
+      const allPosts = await getPublishedPosts(10)
+      const related = allPosts.filter(p => p.id !== foundPost.id).slice(0, 3)
+      setRelatedPosts(related)
     } catch (error) {
       console.error("Error loading post:", error)
       notFound()
@@ -86,7 +76,6 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
-      // You could show a toast here
     }
   }
 
@@ -141,16 +130,24 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         >
           {/* Hero Section */}
           <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <div className="text-white text-center p-8">
-              <Badge
-                variant="secondary"
-                className="mb-4"
-              >
-                {post.category}
-              </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
-              <p className="text-lg opacity-90 max-w-2xl">{post.excerpt}</p>
-            </div>
+            {post.featuredImage ? (
+              <img
+                src={post.featuredImage}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-white text-center p-8">
+                <Badge
+                  variant="secondary"
+                  className="mb-4"
+                >
+                  {post.status}
+                </Badge>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+                <p className="text-lg opacity-90 max-w-2xl">{post.excerpt}</p>
+              </div>
+            )}
           </div>
 
           {/* Article Meta */}
@@ -212,27 +209,6 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
             <div className="prose prose-lg max-w-none">
               <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">{post.content}</div>
             </div>
-
-            {/* Tags */}
-            <div className="mt-8 pt-6 border-t">
-              <div className="flex items-center gap-2 mb-4">
-                <FaTag
-                  className="text-gray-400"
-                  size={16}
-                />
-                <span className="text-sm font-medium text-gray-700">Tags:</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
           </div>
         </motion.article>
 
@@ -252,18 +228,26 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                   className="hover:shadow-lg transition-shadow group"
                 >
                   <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                    <div className="text-gray-400 text-center">
-                      <div className="w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center mb-2 mx-auto">
-                        <span className="text-lg">📝</span>
+                    {relatedPost.featuredImage ? (
+                      <img
+                        src={relatedPost.featuredImage}
+                        alt={relatedPost.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">
+                        <div className="w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center mb-2 mx-auto">
+                          <span className="text-lg">📝</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   <CardContent className="p-4">
                     <Badge
                       variant="outline"
                       className="mb-2"
                     >
-                      {relatedPost.category}
+                      {relatedPost.status}
                     </Badge>
                     <Link href={`/blog/${relatedPost.slug}`}>
                       <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">

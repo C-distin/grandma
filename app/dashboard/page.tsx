@@ -2,19 +2,20 @@
 
 import { motion } from "motion/react"
 import { useState, useEffect } from "react"
-import { FaArrowLeft, FaChartLine, FaGear, FaImage, FaList, FaPlus } from "react-icons/fa6"
+import { FaArrowLeft, FaList, FaPlus } from "react-icons/fa6"
 import { toast } from "sonner"
 import { CreatePost } from "@/components/dashboard/CreatePost"
 import { PostList } from "@/components/dashboard/PostList"
-import { getFeaturedPosts, deletePost } from "@/actions/blog"
+import { getAllPosts, deletePost } from "@/actions/blog"
+import type { BlogPost } from "@/lib/validation/blog"
 
-type TabType = "list" | "create" | "gallery" | "analytics" | "settings"
-type PostType = Awaited<ReturnType<typeof getFeaturedPosts>>[number]
+type TabType = "list" | "create"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("list")
-  const [posts, setPosts] = useState<PostType[]>([])
-  const [editingPost, setEditingPost] = useState<PostType | null>(null)
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
+  const [loading, setLoading] = useState(true)
 
   // Fetch posts on mount
   useEffect(() => {
@@ -22,8 +23,16 @@ export default function DashboardPage() {
   }, [])
 
   async function loadPosts() {
-    const data = await getFeaturedPosts(50)
-    setPosts(data)
+    try {
+      setLoading(true)
+      const data = await getAllPosts()
+      setPosts(data)
+    } catch (error) {
+      console.error("Error loading posts:", error)
+      toast.error("Failed to load posts")
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleCreateNew() {
@@ -31,15 +40,20 @@ export default function DashboardPage() {
     setActiveTab("create")
   }
 
-  function handleEditPost(post: PostType) {
+  function handleEditPost(post: BlogPost) {
     setEditingPost(post)
     setActiveTab("create")
   }
 
   async function handleDeletePost(id: string) {
-    await deletePost(id)
-    toast.success("Post deleted")
-    loadPosts()
+    try {
+      await deletePost(id)
+      toast.success("Post deleted")
+      loadPosts()
+    } catch (error) {
+      console.error("Error deleting post:", error)
+      toast.error("Failed to delete post")
+    }
   }
 
   async function handlePostSaved() {
@@ -59,6 +73,21 @@ export default function DashboardPage() {
   ]
 
   const renderTabContent = () => {
+    if (loading && activeTab === "list") {
+      return (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
     switch (activeTab) {
       case "list":
         return (

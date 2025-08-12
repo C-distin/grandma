@@ -1,11 +1,8 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
 import { FaSave, FaTimes } from "react-icons/fa"
 import { toast } from "sonner"
-import { Tiptap } from "@/components/dashboard/Tiptap"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import type { BlogPost } from "@/lib/validation/blog"
-import { blogPostSchema } from "@/lib/validation/blog"
 import { createPost, updatePost } from "@/actions/blog"
 
 interface CreatePostProps {
@@ -25,25 +21,13 @@ interface CreatePostProps {
 type Status = "draft" | "published" | "archived"
 
 export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) {
-  // keep the form resolver in case you wire validation later
-  const _form = useForm<BlogPost>({
-    resolver: zodResolver(blogPostSchema),
-    defaultValues: {
-      title: "",
-      excerpt: "",
-      content: "",
-      featuredImage: "",
-      status: "draft",
-    },
-  })
-
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     excerpt: "",
     content: "",
     status: "draft" as Status,
-    featuredImage: null as File | null,
+    featuredImage: "",
   })
 
   const [loading, setLoading] = useState(false)
@@ -56,7 +40,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
         excerpt: editingPost.excerpt,
         content: editingPost.content,
         status: editingPost.status as Status,
-        featuredImage: null,
+        featuredImage: editingPost.featuredImage || "",
       })
     }
   }, [editingPost])
@@ -87,19 +71,17 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
 
     setLoading(true)
     try {
-      // NOTE: URL.createObjectURL produces a temporary blob URL.
-      // If you want permanent storage, you should upload to storage (Supabase, S3, etc.)
       const payload = {
         title: formData.title,
         slug: formData.slug,
         excerpt: formData.excerpt,
         content: formData.content,
-        featuredImage: formData.featuredImage ? URL.createObjectURL(formData.featuredImage) : undefined,
+        featuredImage: formData.featuredImage || undefined,
         status: formData.status,
       }
 
       if (editingPost) {
-        await updatePost(editingPost.id, payload)
+        await updatePost(editingPost.id!, payload)
       } else {
         await createPost(payload)
       }
@@ -129,7 +111,6 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
             />
             Cancel
           </Button>
-          {/* Save as submit button — form's onSubmit handles it */}
           <Button
             type="submit"
             form="post-form"
@@ -192,9 +173,13 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
 
                 <div>
                   <Label htmlFor="content">Content *</Label>
-                  <Tiptap
-                    content={formData.content}
-                    onChange={content => setFormData(prev => ({ ...prev, content }))}
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Write your post content here..."
+                    rows={15}
+                    required
                   />
                 </div>
               </CardContent>
@@ -226,17 +211,13 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                 </div>
 
                 <div>
-                  <Label htmlFor="featuredImage">Featured Image</Label>
+                  <Label htmlFor="featuredImage">Featured Image URL</Label>
                   <Input
                     id="featuredImage"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        featuredImage: e.target.files?.[0] ?? null,
-                      }))
-                    }
+                    type="url"
+                    value={formData.featuredImage}
+                    onChange={e => setFormData(prev => ({ ...prev, featuredImage: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
                   />
                 </div>
               </CardContent>

@@ -8,7 +8,6 @@ import {
   FaClock,
   FaEye,
   FaHeart,
-  FaMagnifyingGlass,
   FaPenToSquare,
   FaPlus,
   FaTrash,
@@ -35,60 +34,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { type BlogPost, blogPostSchema } from "@/lib/validation/blog"
-
-// Import your server actions
+import { type BlogPost } from "@/lib/validation/blog"
 import { getAllPosts, deletePost, updatePost } from "@/actions/blog"
 
 interface PostListProps {
+  posts: BlogPost[]
   onCreateNew: () => void
   onEditPost: (post: BlogPost) => void
+  onDeletePost: (id: string) => void
 }
 
-export function PostList({ onCreateNew, onEditPost }: PostListProps) {
-  const [posts, setPosts] = useState<BlogPost[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Load posts (wrapped in useCallback to avoid unnecessary re-renders)
-  const loadPosts = useCallback(async () => {
-    try {
-      setLoading(true)
-      const result = await getAllPosts()
-      if (Array.isArray(result)) {
-        setPosts(result)
-      } else {
-        toast.error("Failed to load posts")
-      }
-    } catch (error) {
-      console.error("Error loading posts:", error)
-      toast.error("An error occurred while loading posts")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadPosts()
-  }, [loadPosts])
-
-  const handleDeletePost = async (postId: string) => {
-    try {
-      await deletePost(postId)
-      toast.success("Post deleted successfully")
-      loadPosts()
-    } catch (error) {
-      console.error("Error deleting post:", error)
-      toast.error("An error occurred while deleting the post")
-    }
-  }
-
+export function PostList({ posts, onCreateNew, onEditPost, onDeletePost }: PostListProps) {
   const handleArchivePost = async (postId: string) => {
     try {
       await updatePost(postId, { status: "archived" })
       toast.success("Post archived successfully")
-      loadPosts()
     } catch (error) {
       console.error("Error archiving post:", error)
       toast.error("An error occurred while archiving the post")
@@ -106,26 +66,6 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
       default:
         return "bg-gray-100 text-gray-800"
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Card
-            key={i}
-            className="animate-pulse"
-          >
-            <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-              <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
   }
 
   return (
@@ -189,7 +129,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <FaClock size={12} />
-                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(post.createdAt!), { addSuffix: true })}
                         </span>
                         <span className="flex items-center gap-1">
                           <FaEye size={12} /> {post.views} views
@@ -221,7 +161,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                         <DropdownMenuContent align="end">
                           {post.status !== "archived" && (
                             <>
-                              <DropdownMenuItem onClick={() => handleArchivePost(post.id)}>
+                              <DropdownMenuItem onClick={() => handleArchivePost(post.id!)}>
                                 <FaBoxArchive
                                   className="mr-2"
                                   size={14}
@@ -254,7 +194,7 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeletePost(post.id)}
+                                  onClick={() => onDeletePost(post.id!)}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Delete
@@ -265,26 +205,6 @@ export function PostList({ onCreateNew, onEditPost }: PostListProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{post.category}</Badge>
-                    {post.tags?.slice(0, 3).map(tag => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {post.tags?.length > 3 && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        +{post.tags.length - 3} more
-                      </Badge>
-                    )}
                   </div>
                 </CardContent>
               </Card>
