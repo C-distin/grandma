@@ -3,13 +3,14 @@
 import { format } from "date-fns"
 import { motion } from "motion/react"
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import { useEffect, useState } from "react"
 import { FaArrowLeft, FaBookmark, FaCalendar, FaClock, FaEye, FaHeart, FaShare, FaUser } from "react-icons/fa6"
+import { getPostBySlug, getPublishedPosts } from "@/actions/blog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getPostBySlug, getPublishedPosts } from "@/actions/blog"
 import type { BlogPost } from "@/lib/validation/blog"
 
 interface BlogPostPageProps {
@@ -36,7 +37,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     if (slug) {
       loadPost()
     }
-  }, [slug])
+  }, [slug, loadPost])
 
   const loadPost = async () => {
     try {
@@ -131,7 +132,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           {/* Hero Section */}
           <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             {post.featuredImage ? (
-              <img
+              <Image
                 src={post.featuredImage}
                 alt={post.title}
                 className="w-full h-full object-cover"
@@ -229,7 +230,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                 >
                   <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                     {relatedPost.featuredImage ? (
-                      <img
+                      <Image
                         src={relatedPost.featuredImage}
                         alt={relatedPost.title}
                         className="w-full h-full object-cover"

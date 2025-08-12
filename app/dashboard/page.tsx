@@ -1,12 +1,12 @@
 "use client"
 
 import { motion } from "motion/react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { FaArrowLeft, FaList, FaPlus } from "react-icons/fa6"
 import { toast } from "sonner"
+import { deletePost, getAllPosts } from "@/actions/blog"
 import { CreatePost } from "@/components/dashboard/CreatePost"
 import { PostList } from "@/components/dashboard/PostList"
-import { getAllPosts, deletePost } from "@/actions/blog"
 import type { BlogPost } from "@/lib/validation/blog"
 
 type TabType = "list" | "create"
@@ -20,7 +20,7 @@ export default function DashboardPage() {
   // Fetch posts on mount
   useEffect(() => {
     loadPosts()
-  }, [])
+  }, [loadPosts])
 
   async function loadPosts() {
     try {
@@ -77,7 +77,10 @@ export default function DashboardPage() {
       return (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
+            <div
+              key={i}
+              className="bg-white rounded-lg shadow-sm p-6 animate-pulse"
+            >
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
               <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>

@@ -1,13 +1,14 @@
 "use client"
 
-import { format, formatDistanceToNow } from "date-fns"
+import { format } from "date-fns"
 import { motion } from "motion/react"
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useState } from "react"
-import { FaCalendar, FaClock, FaEye, FaHeart, FaUser } from "react-icons/fa6"
+import { FaClock, FaEye, FaHeart, FaUser } from "react-icons/fa6"
+import { getPublishedPosts } from "@/actions/blog"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { getPublishedPosts } from "@/actions/blog"
 import type { BlogPost } from "@/lib/validation/blog"
 
 export default function BlogPage() {
@@ -16,7 +17,7 @@ export default function BlogPage() {
 
   useEffect(() => {
     loadPosts()
-  }, [])
+  }, [loadPosts])
 
   async function loadPosts() {
     try {
@@ -39,7 +40,10 @@ export default function BlogPage() {
             <div className="h-4 bg-gray-200 rounded w-2/3 mb-12"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+                <div
+                  key={i}
+                  className="h-64 bg-gray-200 rounded-lg"
+                ></div>
               ))}
             </div>
           </div>
@@ -90,10 +94,12 @@ export default function BlogPage() {
                   {/* Featured Image */}
                   <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                     {post.featuredImage ? (
-                      <img
+                      <Image
                         src={post.featuredImage}
                         alt={post.title}
                         className="w-full h-full object-cover"
+                        width={400}
+                        height={400}
                       />
                     ) : (
                       <div className="text-gray-400 text-center">

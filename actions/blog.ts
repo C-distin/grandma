@@ -1,9 +1,9 @@
 "use server"
 
+import { desc, eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { blogPosts } from "@/lib/db/schema"
-import { eq, desc } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
 import type { BlogPost } from "@/lib/validation/blog"
 
 /**
@@ -12,7 +12,7 @@ import type { BlogPost } from "@/lib/validation/blog"
 export async function getAllPosts(): Promise<BlogPost[]> {
   try {
     const result = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt))
-    
+
     return result.map(post => ({
       id: post.id,
       title: post.title,
@@ -42,9 +42,9 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1)
-    
+
     if (!post) return null
-    
+
     return {
       id: post.id,
       title: post.title,
@@ -73,14 +73,18 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
  */
 export async function getPublishedPosts(limit?: number): Promise<BlogPost[]> {
   try {
-    let query = db.select().from(blogPosts).where(eq(blogPosts.status, "published")).orderBy(desc(blogPosts.publishedAt))
-    
+    let query = db
+      .select()
+      .from(blogPosts)
+      .where(eq(blogPosts.status, "published"))
+      .orderBy(desc(blogPosts.publishedAt))
+
     if (limit) {
       query = query.limit(limit) as any
     }
-    
+
     const result = await query
-    
+
     return result.map(post => ({
       id: post.id,
       title: post.title,
@@ -117,7 +121,7 @@ export async function createPost(data: {
 }): Promise<void> {
   try {
     const publishedAt = data.status === "published" ? new Date() : null
-    
+
     await db.insert(blogPosts).values({
       title: data.title,
       slug: data.slug,
@@ -155,7 +159,7 @@ export async function updatePost(
       ...data,
       updatedAt: new Date(),
     }
-    
+
     // Set publishedAt when publishing for the first time
     if (data.status === "published") {
       const [existingPost] = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1)
@@ -164,10 +168,7 @@ export async function updatePost(
       }
     }
 
-    await db
-      .update(blogPosts)
-      .set(updateData)
-      .where(eq(blogPosts.id, id))
+    await db.update(blogPosts).set(updateData).where(eq(blogPosts.id, id))
 
     revalidatePath("/dashboard")
     revalidatePath("/blog")

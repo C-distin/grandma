@@ -2,17 +2,9 @@
 
 import { formatDistanceToNow } from "date-fns"
 import { motion } from "motion/react"
-import { useEffect, useState, useCallback } from "react"
-import {
-  FaBoxArchive,
-  FaClock,
-  FaEye,
-  FaHeart,
-  FaPenToSquare,
-  FaPlus,
-  FaTrash,
-} from "react-icons/fa6"
+import { FaBoxArchive, FaClock, FaEye, FaHeart, FaPenToSquare, FaPlus, FaTrash } from "react-icons/fa6"
 import { toast } from "sonner"
+import { updatePost } from "@/actions/blog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { type BlogPost } from "@/lib/validation/blog"
-import { getAllPosts, deletePost, updatePost } from "@/actions/blog"
+import type { BlogPost } from "@/lib/validation/blog"
 
 interface PostListProps {
   posts: BlogPost[]

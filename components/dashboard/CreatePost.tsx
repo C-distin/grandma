@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
-import { FaSave, FaTimes } from "react-icons/fa"
+import React, { useState, useEffect } from "react"
+import { FaXmark, FaFloppyDisk } from "react-icons/fa6"
 import { toast } from "sonner"
+import { createPost, updatePost } from "@/actions/blog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,7 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import type { BlogPost } from "@/lib/validation/blog"
-import { createPost, updatePost } from "@/actions/blog"
+import { v4 as uuidv4 } from "uuid"
+import { createClient } from "@supabase/supabase-js"
+import Image from "next/image"
+
+import { Tiptap } from "@/components/dashboard/Tiptap"
 
 interface CreatePostProps {
   editingPost: BlogPost | null
@@ -20,6 +25,10 @@ interface CreatePostProps {
 
 type Status = "draft" | "published" | "archived"
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) {
   const [formData, setFormData] = useState({
     title: "",
@@ -27,7 +36,8 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
     excerpt: "",
     content: "",
     status: "draft" as Status,
-    featuredImage: "",
+    featuredImageFile: null as File | null,
+    featuredImageUrl: "" as string,
   })
 
   const [loading, setLoading] = useState(false)
@@ -35,13 +45,26 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
   useEffect(() => {
     if (editingPost) {
       setFormData({
-        title: editingPost.title,
-        slug: editingPost.slug,
-        excerpt: editingPost.excerpt,
-        content: editingPost.content,
-        status: editingPost.status as Status,
-        featuredImage: editingPost.featuredImage || "",
+        title: editingPost.title ?? "",
+        slug: editingPost.slug ?? "",
+        excerpt: editingPost.excerpt ?? "",
+        content: editingPost.content ?? "",
+        status: (editingPost.status as Status) ?? "draft",
+        featuredImageFile: null,
+        featuredImageUrl: editingPost.featuredImage ?? "",
       })
+    } else {
+      // reset when not editing
+      setFormData(prev => ({
+        ...prev,
+        title: "",
+        slug: "",
+        excerpt: "",
+        content: "",
+        status: "draft",
+        featuredImageFile: null,
+        featuredImageUrl: "",
+      }))
     }
   }, [editingPost])
 
@@ -54,11 +77,45 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
       .trim()
 
   const handleTitleChange = (title: string) => {
-    setFormData(prev => ({
-      ...prev,
-      title,
-      slug: generateSlug(title),
-    }))
+    // Only auto-generate slug if user hasn't manually edited it (simple heuristic)
+    setFormData(prev => {
+      const shouldAuto = !prev.slug || prev.slug === generateSlug(prev.title)
+      return {
+        ...prev,
+        title,
+        slug: shouldAuto ? generateSlug(title) : prev.slug,
+      }
+    })
+  }
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!formData.featuredImageFile) return formData.featuredImageUrl || null
+
+    try {
+      const ext = formData.featuredImageFile.name.split(".").pop() ?? "jpg"
+      const fileName = `${uuidv4()}.${ext}`
+      const filePath = `posts/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("blog-images")
+        .upload(filePath, formData.featuredImageFile, {
+          cacheControl: "3600",
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error("Supabase upload error:", uploadError)
+        toast.error("Image upload failed")
+        return null
+      }
+
+      const { data } = supabase.storage.from("blog-images").getPublicUrl(filePath)
+      return data.publicUrl
+    } catch (err) {
+      console.error("Upload error:", err)
+      toast.error("Image upload failed")
+      return null
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,17 +128,19 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
 
     setLoading(true)
     try {
+      const imageUrl = await uploadImage()
+
       const payload = {
         title: formData.title,
         slug: formData.slug,
         excerpt: formData.excerpt,
         content: formData.content,
-        featuredImage: formData.featuredImage || undefined,
+        featuredImage: imageUrl ? imageUrl : undefined,
         status: formData.status,
       }
 
-      if (editingPost) {
-        await updatePost(editingPost.id!, payload)
+      if (editingPost && editingPost.id) {
+        await updatePost(editingPost.id, payload)
       } else {
         await createPost(payload)
       }
@@ -104,8 +163,9 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
           <Button
             variant="outline"
             onClick={onCancel}
+            disabled={loading}
           >
-            <FaTimes
+            <FaXmark
               className="mr-2"
               size={16}
             />
@@ -116,7 +176,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
             form="post-form"
             disabled={loading}
           >
-            <FaSave
+            <FaFloppyDisk
               className="mr-2"
               size={16}
             />
@@ -173,6 +233,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
 
                 <div>
                   <Label htmlFor="content">Content *</Label>
+                  {/*
                   <Textarea
                     id="content"
                     value={formData.content}
@@ -180,6 +241,11 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                     placeholder="Write your post content here..."
                     rows={15}
                     required
+                  />
+                  */}
+                  <Tiptap
+                    content={formData.content}
+                    onUpdate={html => setFormData(prev => ({ ...prev, content: html }))}
                   />
                 </div>
               </CardContent>
@@ -197,7 +263,7 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: Status) => setFormData(prev => ({ ...prev, status: value }))}
+                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, status: value as Status }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={formData.status} />
@@ -211,14 +277,43 @@ export function CreatePost({ editingPost, onSaved, onCancel }: CreatePostProps) 
                 </div>
 
                 <div>
-                  <Label htmlFor="featuredImage">Featured Image URL</Label>
+                  <Label htmlFor="featuredImage">Featured Image</Label>
                   <Input
                     id="featuredImage"
-                    type="url"
-                    value={formData.featuredImage}
-                    onChange={e => setFormData(prev => ({ ...prev, featuredImage: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        featuredImageFile: e.target.files?.[0] ?? null,
+                      }))
+                    }
                   />
+
+                  {/* Preview only when we have a URL */}
+                  {formData.featuredImageUrl ? (
+                    <div className="mt-2 w-full rounded-lg border overflow-hidden">
+                      <Image
+                        src={formData.featuredImageUrl}
+                        alt="Current Featured"
+                        width={800}
+                        height={450}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      />
+                    </div>
+                  ) : formData.featuredImageFile ? (
+                    // preview local selected file
+                    <div className="mt-2">
+                      <Image
+                        src={URL.createObjectURL(formData.featuredImageFile)}
+                        alt="Selected preview"
+                        width={800}
+                        height={450}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                        className="w-full rounded-lg border"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
