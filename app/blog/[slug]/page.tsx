@@ -9,8 +9,8 @@ import { FaArrowLeft, FaBookmark, FaCalendar, FaClock, FaEye, FaHeart, FaShare, 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getBlogPosts } from "@/lib/actions/blog"
-import type { BlogPost } from "@/lib/db/schema"
+import { getAllPosts } from "@/actions/blog"
+import type { blogPosts } from "@/lib/db/schema"
 
 interface BlogPostPageProps {
   params: Promise<{

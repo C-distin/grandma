@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getBlogCategories, getBlogPosts } from "@/lib/actions/blog"
+import { getAllPosts } from "@/actions/blog"
 
 export default function BlogPage() {
   const [categories, setCategories] = useState<string[]>([])
@@ -59,60 +59,6 @@ export default function BlogPage() {
             practices.
           </motion.p>
         </div>
-
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <FaMagnifyingGlass
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      size={16}
-                    />
-                    <Input
-                      placeholder="Search articles..."
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem
-                        key={category}
-                        value={category}
-                      >
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="publishedAt-desc">Latest First</SelectItem>
-                    <SelectItem value="publishedAt-asc">Oldest First</SelectItem>
-                    <SelectItem value="views-desc">Most Popular</SelectItem>
-                    <SelectItem value="title-asc">Title A-Z</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     </div>
   )
