@@ -1,193 +1,73 @@
 "use server"
 
-import { desc, eq } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { blogPosts } from "@/lib/db/schema"
-import type { BlogPost } from "@/lib/validation/blog"
+import { eq, desc } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
+import slugify from "slugify"
 
-/**
- * Fetch all posts
- */
-export async function getAllPosts(): Promise<BlogPost[]> {
-  try {
-    const result = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt))
-
-    return result.map(post => ({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      excerpt: post.excerpt,
-      content: post.content,
-      featuredImage: post.featuredImage || undefined,
-      authorName: post.authorName,
-      authorAvatar: post.authorAvatar || undefined,
-      readingTime: post.readingTime,
-      views: post.views,
-      likes: post.likes,
-      publishedAt: post.publishedAt || undefined,
-      status: post.status,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-    }))
-  } catch (error) {
-    console.error("Error fetching posts:", error)
-    return []
-  }
+export async function getAllPosts() {
+  return await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt))
 }
 
-/**
- * Fetch post by slug
- */
-export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
-  try {
-    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1)
-
-    if (!post) return null
-
-    return {
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      excerpt: post.excerpt,
-      content: post.content,
-      featuredImage: post.featuredImage || undefined,
-      authorName: post.authorName,
-      authorAvatar: post.authorAvatar || undefined,
-      readingTime: post.readingTime,
-      views: post.views,
-      likes: post.likes,
-      publishedAt: post.publishedAt || undefined,
-      status: post.status,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-    }
-  } catch (error) {
-    console.error("Error fetching post by slug:", error)
-    return null
-  }
+export async function getPostById(id: number) {
+  const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, id))
+  return post
 }
 
-/**
- * Fetch published posts
- */
-export async function getPublishedPosts(limit?: number): Promise<BlogPost[]> {
-  try {
-    let query = db
-      .select()
-      .from(blogPosts)
-      .where(eq(blogPosts.status, "published"))
-      .orderBy(desc(blogPosts.publishedAt))
-
-    if (limit) {
-      query = query.limit(limit) as any
-    }
-
-    const result = await query
-
-    return result.map(post => ({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      excerpt: post.excerpt,
-      content: post.content,
-      featuredImage: post.featuredImage || undefined,
-      authorName: post.authorName,
-      authorAvatar: post.authorAvatar || undefined,
-      readingTime: post.readingTime,
-      views: post.views,
-      likes: post.likes,
-      publishedAt: post.publishedAt || undefined,
-      status: post.status,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-    }))
-  } catch (error) {
-    console.error("Error fetching published posts:", error)
-    return []
-  }
+export async function getPublishedPosts() {
+  return await db.select().from(blogPosts).where(eq(blogPosts.status, "published"))
 }
 
-/**
- * Create new post
- */
-export async function createPost(data: {
+export async function getArchivedPosts() {
+  return db.select().from(blogPosts).where(eq(blogPosts.status, "archived"))
+}
+
+export async function getDraftPosts() {
+  return db.select().from(blogPosts).where(eq(blogPosts.status, "draft"))
+}
+
+export async function getPostBySlug(slug: string) {
+  const post = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug)).limit(1)
+  return post[0] || null
+}
+
+export async function createPost({
+  title,
+  // slug,
+  content,
+  coverUrl,
+  status,
+}: {
   title: string
   slug: string
-  excerpt: string
   content: string
-  featuredImage?: string
-  status?: "draft" | "published" | "archived"
-}): Promise<void> {
-  try {
-    const publishedAt = data.status === "published" ? new Date() : null
-
-    await db.insert(blogPosts).values({
-      title: data.title,
-      slug: data.slug,
-      excerpt: data.excerpt,
-      content: data.content,
-      featuredImage: data.featuredImage,
-      status: data.status ?? "draft",
-      publishedAt,
-    })
-
-    revalidatePath("/dashboard")
-    revalidatePath("/blog")
-  } catch (error) {
-    console.error("Error creating post:", error)
-    throw new Error("Failed to create post")
-  }
+  coverUrl?: string
+  status: "draft" | "published" | "archived"
+}) {
+  const slugifiedTitle = slugify(title, { lower: true, strict: true })
+  await db.insert(blogPosts).values({
+    title,
+    slug: slugifiedTitle,
+    content,
+    coverUrl,
+    status: status || "draft",
+  })
+  revalidatePath("/dashboard")
 }
 
-/**
- * Update post
- */
 export async function updatePost(
-  id: string,
-  data: Partial<{
-    title: string
-    slug: string
-    excerpt: string
-    content: string
-    featuredImage: string
-    status: "draft" | "published" | "archived"
-  }>
-): Promise<void> {
-  try {
-    const updateData: any = {
-      ...data,
-      updatedAt: new Date(),
-    }
-
-    // Set publishedAt when publishing for the first time
-    if (data.status === "published") {
-      const [existingPost] = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1)
-      if (existingPost && !existingPost.publishedAt) {
-        updateData.publishedAt = new Date()
-      }
-    }
-
-    await db.update(blogPosts).set(updateData).where(eq(blogPosts.id, id))
-
-    revalidatePath("/dashboard")
-    revalidatePath("/blog")
-  } catch (error) {
-    console.error("Error updating post:", error)
-    throw new Error("Failed to update post")
-  }
+  id: number,
+  data: Partial<{ title: string; content: string; coverUrl: string; status: "draft" | "published" | "archived" }>
+) {
+  await db
+    .update(blogPosts)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(blogPosts.id, id))
+  revalidatePath("/dashboard")
 }
 
-/**
- * Delete post
- */
-export async function deletePost(id: string): Promise<void> {
-  try {
-    await db.delete(blogPosts).where(eq(blogPosts.id, id))
-    revalidatePath("/dashboard")
-    revalidatePath("/blog")
-  } catch (error) {
-    console.error("Error deleting post:", error)
-    throw new Error("Failed to delete post")
-  }
+export async function deletePost(id: number) {
+  await db.delete(blogPosts).where(eq(blogPosts.id, id))
+  revalidatePath("/dashboard")
 }

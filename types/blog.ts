@@ -1,14 +1,24 @@
-export interface CreatePostData {
+export type BlogStatus = "draft" | "published" | "archived"
+
+export interface BlogPost {
+  id: number
   title: string
+  slug: string
   content: string
-  excerpt: string
-  featuredImage?: string
-  status: "draft" | "published"
+  coverUrl?: string
+  status: BlogStatus
+  createdAt: string // ISO date string
+  updatedAt: string // ISO date string
 }
 
-export interface PostFilters {
-  status?: "all" | "draft" | "published" | "archived"
-  category?: string
-  search?: string
-  sortBy?: "newest" | "oldest" | "title" | "views"
+export interface BlogPostInput {
+  title: string
+  content: string
+  coverUrl?: string
+  status?: BlogStatus
+}
+
+export interface PaginatedBlogs {
+  posts: BlogPost[]
+  hasMore: boolean
 }
