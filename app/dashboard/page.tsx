@@ -19,8 +19,8 @@ import {
   FaFilter, 
   FaEye, 
   FaHeart, 
-  FaFileText, 
-  FaEdit, 
+  FaFileLines, 
+  FaPenToSquare, 
   FaTrash,
   FaChartLine
 } from "react-icons/fa6"
@@ -164,7 +164,7 @@ export default function DashboardPage() {
   const tabs = [
     { id: "overview", label: "Overview", icon: FaChartLine },
     { id: "create", label: "Create Post", icon: FaPlus },
-    { id: "manage", label: "Manage Posts", icon: FaFileText },
+    { id: "manage", label: "Manage Posts", icon: FaFileLines },
     { id: "analytics", label: "Analytics", icon: FaEye },
   ]
 
@@ -221,7 +221,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-medium text-gray-600">Total Posts</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalPosts}</p>
                       </div>
-                      <FaFileText className="text-blue-500" size={24} />
+                      <FaFileLines className="text-blue-500" size={24} />
                     </div>
                   </CardContent>
                 </Card>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-medium text-gray-600">Drafts</p>
                         <p className="text-2xl font-bold text-yellow-600">{stats.draftPosts}</p>
                       </div>
-                      <FaEdit className="text-yellow-500" size={24} />
+                      <FaPenToSquare className="text-yellow-500" size={24} />
                     </div>
                   </CardContent>
                 </Card>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     </div>
                   ) : posts.length === 0 ? (
                     <div className="text-center py-8">
-                      <FaFileText className="mx-auto text-gray-400 mb-4" size={48} />
+                      <FaFileLines className="mx-auto text-gray-400 mb-4" size={48} />
                       <p className="text-gray-600">No blog posts yet. Create your first post!</p>
                       <Button
                         onClick={() => setActiveTab("create")}
