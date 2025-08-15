@@ -23,7 +23,7 @@ import {
   FaTrash,
   FaChartLine
 } from "react-icons/fa6"
-import { MagnifyingGlassIcon } from "lucide-react"
+import { GlassesIcon as MagnifyingGlassIcon } from "lucide-react"
 import type { BlogPost } from "@/types/blog"
 
 type TabType = "overview" | "create" | "manage" | "analytics"
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                         <Input
                           placeholder="Search posts..."
                           value={searchTerm}
