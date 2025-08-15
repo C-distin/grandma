@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { 
   FaPlus, 
-  FaSearch, 
   FaFilter, 
   FaEye, 
   FaHeart, 
@@ -24,6 +23,7 @@ import {
   FaTrash,
   FaChartLine
 } from "react-icons/fa6"
+import { MagnifyingGlassIcon } from "lucide-react"
 import type { BlogPost } from "@/types/blog"
 
 type TabType = "overview" | "create" | "manage" | "analytics"
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <div className="relative">
-                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                         <Input
                           placeholder="Search posts..."
                           value={searchTerm}
